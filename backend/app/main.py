@@ -31,6 +31,7 @@ from app.api.errors import (
     unhandled_exception_handler,
     validation_exception_handler,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 configure_logging()
 
@@ -75,7 +76,11 @@ def create_application() -> FastAPI:
     Exception,
     unhandled_exception_handler,
     )
-
+    origins = [
+        origin.strip()
+        for origin in settings.cors_origins.split(",")
+        if origin.strip()
+    ]
     return application
 
 
