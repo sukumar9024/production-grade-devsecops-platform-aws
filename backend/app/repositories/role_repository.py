@@ -15,3 +15,16 @@ class RoleRepository:
         )
 
         return db.scalar(statement)
+
+    @staticmethod
+    def get_all(
+        db: Session,
+    ) -> list[Role]:
+        statement = (
+            select(Role)
+            .order_by(Role.name)
+        )
+
+        return list(
+            db.scalars(statement).all()
+        )

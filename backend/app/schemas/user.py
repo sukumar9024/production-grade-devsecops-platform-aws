@@ -33,10 +33,9 @@ class UserResponse(BaseModel):
     full_name: str | None
 
     status: UserStatus
-
     is_verified: bool
 
-    role_id: uuid.UUID
+    role: RoleResponse
 
     created_at: datetime
     updated_at: datetime
@@ -44,3 +43,18 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+class RoleResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+class UserRoleUpdate(BaseModel):
+    role: str
+
+
+class UserStatusUpdate(BaseModel):
+    status: UserStatus

@@ -1,3 +1,7 @@
+import uuid
+
+from sqlalchemy.orm import joinedload
+
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -68,3 +72,48 @@ class UserRepository:
         )
 
         return db.scalar(statement)
+    @staticmethod
+    def get_by_id(
+        db: Session,
+        user_id: uuid.UUID,
+    ) -> User | None:
+        statement = (
+            select(User)
+            .options(
+                joinedload(User.role)
+            )
+            .where(
+                User.id == user_id
+            )
+        )
+
+        return db.scalar(statement)
+
+
+    @staticmethod
+    def get_all(
+        db: Session,
+    ) -> list[User]:
+        statement = (
+            select(User)
+            .options(
+                joinedload(User.role)
+            )
+            .order_by(User.created_at.desc())
+        )
+
+        return list(
+            db.scalars(statement).unique().all()
+        )
+
+
+    @staticmethod
+    def save(
+        db: Session,
+        user: User,
+    ) -> User:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        return user
