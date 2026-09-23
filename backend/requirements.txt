@@ -8,3 +8,5 @@ alembic
 
 argon2-cffi
 email-validator
+
+PyJWT[crypto]

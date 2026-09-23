@@ -52,3 +52,19 @@ class UserRepository:
         db.refresh(user)
 
         return user
+    
+    @staticmethod
+    def get_by_login(
+        db: Session,
+        identity: str,
+    ) -> User | None:
+        normalized = identity.lower()
+
+        statement = select(User).where(
+            or_(
+                User.email == normalized,
+                User.username == normalized,
+            )
+        )
+
+        return db.scalar(statement)

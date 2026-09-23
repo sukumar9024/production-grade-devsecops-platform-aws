@@ -13,4 +13,5 @@ from app.models import (  # noqa: E402, F401
     Role,
     Service,
     User,
+    RefreshToken
 )

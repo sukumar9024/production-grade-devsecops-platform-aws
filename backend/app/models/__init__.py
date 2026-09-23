@@ -5,6 +5,7 @@ from app.models.project import Project
 from app.models.role import Role
 from app.models.service import Service
 from app.models.user import User
+from app.models.refresh_token import RefreshToken
 
 __all__ = [
     "AuditLog",
@@ -14,4 +15,5 @@ __all__ = [
     "Role",
     "Service",
     "User",
+    "RefreshToken",
 ]
