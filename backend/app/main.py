@@ -15,6 +15,22 @@ from app.core.logging import configure_logging
 from app.middleware.request_logging import (
     RequestLoggingMiddleware,
 )
+from app.middleware.request_id import (
+    RequestIDMiddleware,
+)
+from starlette.exceptions import (
+    HTTPException as StarletteHTTPException,
+)
+
+from fastapi.exceptions import (
+    RequestValidationError,
+)
+
+from app.api.errors import (
+    http_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 
 configure_logging()
 
@@ -49,6 +65,15 @@ def create_application() -> FastAPI:
 
     application.add_middleware(
     RequestLoggingMiddleware
+    )
+
+    application.add_middleware(
+    RequestIDMiddleware
+    )
+
+    application.add_exception_handler(
+    Exception,
+    unhandled_exception_handler,
     )
 
     return application

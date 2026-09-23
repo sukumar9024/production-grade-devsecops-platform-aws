@@ -1,11 +1,33 @@
+from contextvars import ContextVar
+
 from fastapi import Request
+
+
+request_id_context: ContextVar[str | None] = ContextVar(
+    "request_id",
+    default=None,
+)
+
+
+def set_request_id(
+    request_id: str,
+) -> None:
+    request_id_context.set(
+        request_id
+    )
+
+
+def get_current_request_id() -> str | None:
+    return request_id_context.get()
 
 
 def get_request_id(
     request: Request,
 ) -> str | None:
-    return request.headers.get(
-        "X-Request-ID"
+    return getattr(
+        request.state,
+        "request_id",
+        None,
     )
 
 

@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import settings
-
+from app.core.request_context import (
+    get_current_request_id,
+)
 
 RESERVED_LOG_RECORD_FIELDS = {
     "name",
@@ -46,7 +48,14 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
+        request_id = (
+            get_current_request_id()
+        )
 
+        if request_id is not None:
+            log_record[
+                "request_id"
+            ] = request_id
         for key, value in record.__dict__.items():
             if (
                 key not in RESERVED_LOG_RECORD_FIELDS
