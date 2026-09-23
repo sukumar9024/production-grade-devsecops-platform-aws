@@ -5,3 +5,6 @@ pydantic-settings==2.15.0
 SQLAlchemy==2.0.54
 psycopg[binary]==3.3.6
 alembic
+
+argon2-cffi
+email-validator
