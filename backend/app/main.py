@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
-
+from app.api.health import router as health_router
 
 def create_application() -> FastAPI:
     application = FastAPI(
@@ -14,6 +14,15 @@ def create_application() -> FastAPI:
     application.include_router(
         api_v1_router,
         prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+    api_v1_router,
+    prefix=settings.api_v1_prefix,
+    )
+
+    application.include_router(
+        health_router,
     )
 
     return application
