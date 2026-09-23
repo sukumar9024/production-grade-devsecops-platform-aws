@@ -1,3 +1,4 @@
+import logging 
 from fastapi import FastAPI
 
 from app.api.v1.router import router as api_v1_router
@@ -9,6 +10,15 @@ from app.middleware.metrics import (
 from app.api.metrics import (
     router as metrics_router,
 )
+from contextlib import asynccontextmanager
+from app.core.logging import configure_logging
+from app.middleware.request_logging import (
+    RequestLoggingMiddleware,
+)
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
 
 def create_application() -> FastAPI:
     application = FastAPI(
@@ -37,6 +47,10 @@ def create_application() -> FastAPI:
     metrics_router,
     )
 
+    application.add_middleware(
+    RequestLoggingMiddleware
+    )
+
     return application
 
 
@@ -50,3 +64,28 @@ async def root() -> dict[str, str]:
         "version": settings.app_version,
         "environment": settings.environment,
     }
+
+@asynccontextmanager
+async def lifespan(
+    application: FastAPI,
+):
+    logger.info(
+        "Application starting",
+        extra={
+            "app_name": settings.app_name,
+            "app_version": settings.app_version,
+        },
+    )
+
+    yield
+
+    logger.info(
+        "Application stopping"
+    )
+
+application = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    debug=settings.debug,
+    lifespan=lifespan,
+)

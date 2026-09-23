@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     environment: str = "local"
     debug: bool = False
+    log_level: str = "INFO"
 
     api_v1_prefix: str = "/api/v1"
 
