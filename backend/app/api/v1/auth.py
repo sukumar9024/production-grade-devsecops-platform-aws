@@ -1,5 +1,9 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from fastapi import (
+    APIRouter,
+    Depends,
+    Request,
+    status,
+)from sqlalchemy.orm import Session
 from app.schemas.auth import (
     LoginRequest,
     LogoutRequest,
@@ -11,6 +15,12 @@ from app.schemas.user import UserCreate, UserResponse
 from app.services.auth_service import AuthService
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.core.audit_actions import AuditActions
+from app.core.request_context import (
+    get_client_ip,
+    get_request_id,
+)
+from app.services.audit_service import AuditService
 
 router = APIRouter(
     prefix="/auth",
@@ -25,7 +35,7 @@ def get_me(
     current_user: User = Depends(get_current_user),
 ) -> UserResponse:
     return current_user
-    
+
 @router.post(
     "/register",
     response_model=UserResponse,
@@ -33,12 +43,29 @@ def get_me(
 )
 def register(
     payload: UserCreate,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UserResponse:
-    return AuthService.register_user(
+    user = AuthService.register_user(
         db=db,
         payload=payload,
     )
+
+    AuditService.record(
+        db=db,
+        action=AuditActions.USER_REGISTERED,
+        resource_type="user",
+        user_id=user.id,
+        resource_id=str(user.id),
+        request_id=get_request_id(request),
+        ip_address=get_client_ip(request),
+        details={
+            "username": user.username,
+            "email": user.email,
+        },
+    )
+
+    return user
 
 @router.post(
     "/login",
