@@ -3,6 +3,12 @@ from fastapi import FastAPI
 from app.api.v1.router import router as api_v1_router
 from app.core.config import settings
 from app.api.health import router as health_router
+from app.middleware.metrics import (
+    MetricsMiddleware,
+)
+from app.api.metrics import (
+    router as metrics_router,
+)
 
 def create_application() -> FastAPI:
     application = FastAPI(
@@ -23,6 +29,12 @@ def create_application() -> FastAPI:
 
     application.include_router(
         health_router,
+    )
+    application.add_middleware(
+    MetricsMiddleware
+    )
+    application.include_router(
+    metrics_router,
     )
 
     return application
