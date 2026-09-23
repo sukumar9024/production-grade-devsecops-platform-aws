@@ -8,7 +8,10 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     environment: str = "local"
     debug: bool = False
+
     api_v1_prefix: str = "/api/v1"
+
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
