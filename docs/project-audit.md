@@ -2,14 +2,14 @@
 
 The original checkout was not almost complete against the supplied plan. It contained a backend with startup/test defects, a frontend that did not build, empty Docker/Compose/README files, and empty platform directories. The changes repair the application and add substantial platform implementation. **The overall project remains incomplete for production.**
 
-This audit covers the exact supplied [requirements](project-requirements.txt). “Code validated” means static validation only. “Verified locally” refers to the stated local check; it does not imply AWS acceptance.
+This audit covers the exact supplied [requirements](project-requirements.txt). “Code validated” means static validation only. “Verified locally” or “Verified in CI” refers to the stated check; neither implies AWS acceptance. The [security remediation evidence](evidence/security-remediation.json) supersedes the initial image/history findings.
 
 ## Blocking conditions
 
 - AWS default login is expired; no account/domain deployment or destructive production drill was performed.
-- Docker storage became read-only during disk exhaustion; the user requested no Docker restart. Remaining image/observability checks are blocked.
-- Git history still contains the old example JWT secret. The matching local secret was rotated; unknown external deployments and history remediation remain.
-- The backend container scan reports63 HIGH/CRITICAL package findings. Production gates remain closed.
+- Local Docker storage became read-only during disk exhaustion; the user requested no Docker restart. Local observability checks remain blocked. Image scans and built-container smoke now pass on GitHub runners.
+- The old JWT example is retired, rejected at startup and excepted only at its original historical fingerprint. The owner confirmed no external deployment; current local configuration/container credentials differ. Reintroduction still fails secret scanning.
+- Source and image gates pass; production acceptance still requires live staging DAST and the operational checks below.
 - Jenkins controller/agent/credential setup, separate application DB credentials, log dashboards/policy activation, screenshots and live failure/restore drills remain outstanding.
 
 ## Phase-by-phase comparison
@@ -20,7 +20,7 @@ This audit covers the exact supplied [requirements](project-requirements.txt). �
 | 1 — Application Design | Implemented locally | Portal APIs, roles and operational UI; validation in backend and frontend suites. `backend/app/; frontend/src/` |
 | 2 — Backend Development | Verified locally | 62 PostgreSQL-backed backend tests; startup/auth/audit/metrics/health/migrations repaired. `backend/tests/; backend/README.md` |
 | 3 — Frontend Development | Verified locally | 9 frontend tests, build/lint and browser authentication/route checks passed. `frontend/tests/; frontend/src/pages/` |
-| 4 — Production Docker Images | Partial | Nonroot multistage images built and runtime checked; backend image security scan still fails. `backend/Dockerfile; frontend/Dockerfile; docs/security-review.md` |
+| 4 — Production Docker Images | Verified in CI | Nonroot multistage linux/amd64 images built, scanned and exercised through authenticated smoke; no AWS runtime proof. `backend/Dockerfile; frontend/Dockerfile; docs/security-review.md` |
 | 5 — Local Production-Like Stack | Partial | Core app/database/cache/Nginx stack runs; observability startup blocked by Docker storage. `compose.yaml; compose.dev.yaml; compose.observability.yaml` |
 | 6 — Terraform Foundation | Code validated | State bootstrap plus all three environment configurations validated; no AWS apply. `infrastructure/terraform/` |
 | 7 — AWS Network Architecture | Code validated | 2AZ public/app/data subnets, NAT and isolated DB routes; no live network evidence. `infrastructure/terraform/modules/vpc/` |
@@ -30,17 +30,17 @@ This audit covers the exact supplied [requirements](project-requirements.txt). �
 | 11 — Database | Pending AWS evidence | Encrypted private RDS, backup/maintenance settings coded; real RDS restore not performed. `infrastructure/terraform/modules/rds/; docs/runbooks/backup-restore.md` |
 | 12 — Redis | Code validated | Private authenticated TLS ElastiCache defined; local authenticated Redis verified. `infrastructure/terraform/modules/redis/; compose.yaml` |
 | 13 — Container Registry | Code validated | Immutable ECR repos, scanning and untagged lifecycle policy; no pushed ECR releases. `infrastructure/terraform/modules/ecr/` |
-| 14 — Secrets Management | Partial / blocker | Runtime retrieval and secret metadata added; historical JWT leak remains a release blocker. Local matching secret rotated. `scripts/fetch-secrets.py; docs/security-review.md` |
+| 14 — Secrets Management | Partial | Runtime retrieval coded; historical JWT retired and blocked from reuse. Live Secrets Manager/rotation checks remain. `scripts/fetch-secrets.py; docs/security-review.md` |
 | 15 — Domain and TLS | Pending AWS evidence | Route53/ACM/HTTPS redirect code exists; domain/account unavailable. `infrastructure/terraform/modules/alb/` |
 | 16 — Application Load Balancer | Code validated | ALB readiness health and drain delay coded; no actual target health evidence. `infrastructure/terraform/modules/alb/` |
 | 17 — Jenkins Platform | Partial | Jenkins pipeline and optional private EC2 defined; live controller/credentials/agents not configured. `pipelines/Jenkinsfile; docs/ci-cd.md` |
-| 18 — Static Security Testing | Partial | Semgrep found zero blocking findings and a parse warning; syntax fixed, strict rescan blocked by Docker. `scripts/security-scan.sh; security/semgrep.yml` |
+| 18 — Static Security Testing | Verified in CI | Strict Semgrep rescan reports zero findings and zero errors. `scripts/security-scan.sh; security/semgrep.yml` |
 | 19 — Dependency Security | Verified locally | pip-audit and npm audit reported no known vulnerabilities. `docs/evidence/validation-summary.json` |
 | 20 — IaC Security | Verified statically | Trivy IaC HIGH/CRITICAL gate passed with two resource-scoped architecture exceptions. `docs/security-review.md` |
-| 21 — Container Security | Blocked | Backend image has63 HIGH/CRITICAL package findings; frontend scan blocked, artifacts preserved. `docs/security-review.md` |
+| 21 — Container Security | Verified in CI | Both built runtime images have zero HIGH/CRITICAL vulnerabilities and zero secrets; gateway reuses scanned frontend runtime. `docs/security-review.md` |
 | 22 — Deployment | Partial | Digest deployments, release metadata, migration logic coded; AWS deployment not executed. `scripts/deploy.py; scripts/publish-images.py` |
 | 23 — Production Deployment Strategy | Partial | Two-slot gateway switching and authenticated smoke implemented; real AWS switch pending. `scripts/deploy.py; compose.prod.yaml; compose.gateway.yaml` |
-| 24 — Automated Rollback | Partial | 5 deployment tests cover success/failure/rollback; real container and ALB rollback drill pending. `tests/platform/test_deployment.py; docs/runbooks/deployment.md` |
+| 24 — Automated Rollback | Partial | 7 deployment tests cover success/failure/rollback and gateway image restoration; real container and ALB rollback drill pending. `tests/platform/test_deployment.py; docs/runbooks/deployment.md` |
 | 25 — DAST | Pending staging | Time-bounded authenticated ZAP baseline/API workflow written; no reachable staging scan. `scripts/dast.py; security/zap-hook.py` |
 | 26 — Metrics | Partial | App metrics verified; Prometheus/node/cAdvisor/readiness probe configured, runtime stack blocked. `monitoring/; compose.observability*.yaml` |
 | 27 — Grafana | Configured | Three Grafana dashboards provisioned; no live dashboard verification yet. `monitoring/grafana/` |
@@ -50,10 +50,10 @@ This audit covers the exact supplied [requirements](project-requirements.txt). �
 | 31 — Rate Limiting | Configured | Nginx authentication rate limits cover login/refresh/register/token/password-reset; load/abuse test pending. `docker/nginx-local.conf; docker/gateway/default.conf` |
 | 32 — Backups | Partial | Local dump/restore verified9tables; RDS snapshot/restore scripts and S3 versioning coded, live AWS drill pending. `scripts/local-restore-drill.py; scripts/rds-*.sh` |
 | 33 — Disaster Recovery | Documented / unproven | RPO24h/RTO2h are planning targets; no timed AWS disaster recovery drill. `docs/runbooks/disaster-recovery.md` |
-| 34 — Security Hardening | Partial | Private networking/nonroot/TLS/encryption controls added; base-image fixes, restricted DB user and live review pending. `docs/security-review.md; infrastructure/README.md` |
+| 34 — Security Hardening | Partial | Private networking/nonroot/TLS/encryption and scanned image fixes added; restricted DB user and live review pending. `docs/security-review.md; infrastructure/README.md` |
 | 35 — Operational Documentation | Documented | Deployment, incident, backup/restore and disaster recovery runbooks added. `docs/runbooks/` |
 | 36 — Production Testing | Partial | Automated auth/DB/Redis/failure tests and local restore passed; live alert/CPU/disk/outage/rollback drills pending. `backend/tests/; tests/platform/; docs/runbooks/incidents.md` |
-| 37 — Final Security Review | Blocked | Full security chain not green: historical secret + backend image findings; DAST not run. `docs/security-review.md` |
+| 37 — Final Security Review | Partial | Source/image checks pass; staging DAST, restricted DB credentials and live operational review remain. `docs/security-review.md` |
 | 38 — Final Production Validation | Pending | Public domain/HTTPS/AWS/alerts/rollback/RDS restore not demonstrated. Local frontend/API/auth validated. `docs/evidence/validation-summary.json` |
 | 39 — GitHub Presentation | Partial | README/runbooks and five PNG design diagrams delivered; live service/security/AWS screenshots pending. `README.md; diagrams/` |
 | 40 — Resume-Ready Completion Criteria | NOT COMPLETE | Do not claim resume-ready production completion until all acceptance evidence and security gates pass. `docs/project-audit.md` |
@@ -148,13 +148,13 @@ This expands every numbered requirement from the source plan. The phase notes ab
 | 17.1 Deploy Jenkins | Incomplete | `pipelines/Jenkinsfile; docs/ci-cd.md` |
 | 17.2 Configure Jenkins credentials | Incomplete | `pipelines/Jenkinsfile; docs/ci-cd.md` |
 | 17.3 Create pipeline structure | Partial | `pipelines/Jenkinsfile; docs/ci-cd.md` |
-| 18.1 Add Semgrep | Partial | `scripts/security-scan.sh; security/semgrep.yml` |
+| 18.1 Add Semgrep | Verified in CI | `scripts/security-scan.sh; security/semgrep.yml` |
 | 18.2 Set failure criteria | Partial | `scripts/security-scan.sh; security/semgrep.yml` |
 | 19.1 Scan Python dependencies | Verified locally | `docs/evidence/validation-summary.json` |
 | 19.2 Scan npm dependencies | Verified locally | `docs/evidence/validation-summary.json` |
 | 20.1 Scan Terraform | Verified statically | `docs/security-review.md` |
-| 21.1 Scan images using Trivy | Blocked | `docs/security-review.md` |
-| 21.2 Define security gate | Blocked | `docs/security-review.md` |
+| 21.1 Scan images using Trivy | Verified in CI | `docs/security-review.md` |
+| 21.2 Define security gate | Verified in CI | `docs/security-review.md` |
 | 21.3 Generate scan artifacts | Blocked | `docs/security-review.md` |
 | 22.1 Pull immutable image | Partial | `scripts/deploy.py; scripts/publish-images.py` |
 | 22.2 Record release metadata | Partial | `scripts/deploy.py; scripts/publish-images.py` |
@@ -224,11 +224,12 @@ This expands every numbered requirement from the source plan. The phase notes ab
 
 Record a real public URL and HTTPS redirect/certificate evidence; reviewed Terraform plans/applies and SG reachability; live Jenkins pipeline and scan artifacts; staging authenticated DAST; exact production image digests; successful and intentionally failed rollout/rollback; working metric targets and dashboard screenshots; a received/resolved test alert; searchable retained logs; RDS backup and validated restore timing; and timed recovery results. Do not replace these with design diagrams or screenshots of unexecuted configuration.
 
-## Verified local results
+## Verified results
 
-- Earlier backend run: 62 tests passed, including PostgreSQL migrations and security regressions. The final rerun produced 10 passes, 1 failure and 51 setup errors because PostgreSQL reported a read-only filesystem after Docker storage failed; full revalidation is pending.
+- Earlier local backend run: 62 tests passed. A later local rerun failed due to PostgreSQL read-only storage. The complete backend suite plus the new JWT regression now passes against fresh PostgreSQL/Redis in GitHub CI; local Docker remains unrepaired.
 - Frontend:9tests passed; lint and TypeScript/Vite build passed; login/session restore/role-route/logout tested in a browser.
-- Platform: 8 tests passed (5 deployment state-machine tests and 3 DAST report-gate tests).
+- Platform: 13 tests passed (7 deployment state-machine tests, 3 DAST report-gate tests and 3 AWS runtime-configuration tests).
+- Security workflow: source/dependency/history/filesystem/IaC checks, both image scans and built-container authenticated smoke pass. Downloaded artifact counts and hashes are recorded in [remediation evidence](evidence/security-remediation.json).
 - Core Compose stack: migrations/roles/health passed; frontend UID101, backend UID10001; Nginx config validated.
 - Terraform: bootstrap + dev + staging + prod validate; format passes. Ansible:4playbooks syntax checked offline.
 - Local restore: all9tables matched after dump/restore. See [machine-readable evidence](evidence/validation-summary.json).

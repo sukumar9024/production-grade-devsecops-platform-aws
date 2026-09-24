@@ -78,6 +78,20 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual((self.root / ".runtime/gateway.env").read_text(),
                          f"GATEWAY_IMAGE={self.old['frontend_image']}\n")
 
+    def test_failed_first_release_cannot_restart_gateway_on_reboot(self):
+        (self.root / ".runtime/current.json").unlink()
+        (self.root / ".runtime/gateway.env").unlink()
+
+        def unhealthy_gateway(url):
+            if url.endswith(":8080"):
+                raise RuntimeError("gateway failed")
+
+        self.manager.checker = unhealthy_gateway
+        with self.assertRaises(RuntimeError):
+            self.manager.deploy(self.new)
+        self.assertFalse((self.root / ".runtime/gateway.env").exists())
+        self.assertIsNone(self.manager.load("current"))
+
 
 if __name__ == "__main__":
     unittest.main()

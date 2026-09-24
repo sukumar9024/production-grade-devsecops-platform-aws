@@ -6,7 +6,9 @@
 
 The original develop run failed before tests because the branch lacked the frontend lockfile and complete backend implementation. Consolidating the application branches supplies those files. The workflow now also installs `requirements-dev.txt` and provides Redis for readiness tests. Pinning Ubuntu 24.04 avoids the announced `ubuntu-latest` image migration affecting this workflow.
 
-GitHub CI is an application validation gate. The security scans and AWS promotion below belong to the separate Jenkins release pipeline; their current blockers are documented in [security review](security-review.md). Use the [AWS hosting guide](aws-hosting.md) for private input templates and the first deployment.
+`.github/workflows/security.yml` adds full-history secret scanning, strict Semgrep, dependency/filesystem/IaC security checks, Docker builds and HIGH/CRITICAL image gates. It starts the built images with disposable PostgreSQL/Redis and verifies authenticated application behavior through the gateway. Both image reports are retained even if one fails. This workflow runs on pushes/PRs, manual dispatch and a weekly schedule on the default branch; enable it on the protected release branch as well. Configure both workflows' checks as required in repository rules. Neither workflow deploys to AWS.
+
+The recorded source/image blockers are resolved; see the [security review](security-review.md) for the exact retired-secret exception and verification evidence. AWS promotion below still requires Jenkins and live staging acceptance. Use the [AWS hosting guide](aws-hosting.md) for private input templates and the first deployment.
 
 ## Jenkins setup and release gates
 
@@ -25,7 +27,7 @@ Create Jenkins credentials with these IDs:
 
 Set pipeline parameters for region, ECR registry, staging/production HTTPS URLs, the SSM transfer bucket and its KMS key. Define the `secureops-release-managers` Jenkins group. Production must come from a protected `main` branch. Repository rules and Jenkins group membership are not created by a Jenkinsfile.
 
-Each build creates disposable PostgreSQL/Redis test services, runs application tests, scans source/dependencies/history/IaC/images, and archives `reports/`. The history scan currently intentionally blocks on the former JWT example. Image scanning also blocks on the current base-image findings. Do not add blanket exclusions to get a green pipeline.
+Each build creates disposable PostgreSQL/Redis test services, runs application tests, scans source/dependencies/history/IaC/images, and archives `reports/`. The original JWT is retired and rejected at startup; only its original historical fingerprint is excepted. The replacement backend/frontend images pass the HIGH/CRITICAL gate. New findings still fail the pipeline; do not add blanket exclusions.
 
 After gates pass, build images are pushed with the full Git SHA, resolved to ECR digests and passed through Ansible over SSM. Immutable ECR tags reject overwrites; a repeated publication needs an explicit reuse policy or a new commit, not deletion of an existing release tag. The same local scanned images are promoted to production repositories. No `latest` deployment is supported.
 

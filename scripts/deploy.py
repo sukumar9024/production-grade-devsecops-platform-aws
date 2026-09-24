@@ -141,6 +141,8 @@ class Deployer:
             elif switched:
                 # First release has no safe fallback; stop the gateway.
                 self.runner(["docker", "stop", "secureops-gateway"])
+                # The systemd unit must not revive a failed first release on reboot.
+                (self.state / "gateway.env").unlink(missing_ok=True)
             try:
                 self.compose(candidate, "down")
             finally:

@@ -2,7 +2,7 @@
 
 A service-operations portal and a reproducible deployment platform for learning production engineering: authentication, service/deployment/incident tracking, security gates, private AWS networking, observability and recovery.
 
-**Status: the application works locally; this project is not yet production-complete.** The [requirement audit](docs/project-audit.md) maps the supplied plan to code and evidence. AWS deployment, Jenkins execution, authenticated staging DAST, alert delivery, live rollback and RDS restore still require validation. The image/security gates currently block release; see [security findings](docs/security-review.md).
+**Status: application and security checks pass in GitHub; this project is not yet production-complete.** The [requirement audit](docs/project-audit.md) maps the supplied plan to code and evidence. AWS deployment, Jenkins execution, authenticated staging DAST, alert delivery, live rollback and RDS restore still require validation. The recorded source/image findings are resolved; see [security review](docs/security-review.md).
 
 ![AWS architecture](diagrams/01-aws-architecture.png)
 
@@ -55,6 +55,8 @@ Follow the [AWS hosting guide](docs/aws-hosting.md) for account setup, private c
 
 The Jenkins pipeline runs lint, unit/API tests, Semgrep, dependency/secret/filesystem/IaC scans, Docker builds and Trivy image scans. It publishes Git SHA tags, resolves ECR digests, deploys staging, runs authenticated smoke/DAST checks, and requires release-manager approval before main-branch production deployment. Reports are retained as build artifacts. See [CI setup](docs/ci-cd.md); a live Jenkins controller and deployment identities are prerequisites.
 
+GitHub Actions also runs source/dependency/history/IaC checks, builds both images, scans their contents and exercises the running containers through the gateway. Backend/frontend images have zero HIGH/CRITICAL findings in the verified remediation run. The gateway uses the same patched, scanned frontend runtime.
+
 Production uses two local application slots per EC2 host. A serialized deployment pulls digests, migrates the database, checks the candidate, switches the stable gateway and verifies health/ALB status. Failed switches restore the current release; manual rollback restores the recorded previous release. Database migrations must remain backward compatible. See the [deployment runbook](docs/runbooks/deployment.md).
 
 Optional local observability:
@@ -77,8 +79,8 @@ make test
 make lint
 ```
 
-Earlier successful checks: **62 backend tests, 9 frontend tests, 8 platform tests**, frontend build/lint, all four Terraform configurations and four Ansible playbook syntax checks. Application containers and same-origin browser authentication were verified before Docker storage became read-only. The final backend rerun was blocked by PostgreSQL read-only storage (1 failure, 51 setup errors); it must be rerun after Docker recovery. See the [evidence summary](docs/evidence/validation-summary.json) and [audit](docs/project-audit.md) for limits and failed checks.
+Current [application CI](https://github.com/sukumar9024/production-grade-devsecops-platform-aws/actions/runs/35995629667) and [Security workflow](https://github.com/sukumar9024/production-grade-devsecops-platform-aws/actions/runs/35995629763) pass: backend tests/migrations, 9 frontend tests/build/lint, platform regression tests, security scans and authenticated built-container smoke. Earlier local Terraform/Ansible checks and the nine-table restore drill remain recorded. The local Docker read-only failure is still unresolved; remote verification did not restart or repair that daemon. See [security evidence](docs/evidence/security-remediation.json), [initial evidence](docs/evidence/validation-summary.json) and the [audit](docs/project-audit.md).
 
 Architecture: [AWS](diagrams/01-aws-architecture.png), [network](diagrams/02-network-architecture.png), [CI/CD](diagrams/03-cicd-pipeline.png), [observability](diagrams/04-observability.png), [security](diagrams/05-security-flow.png). These are design diagrams. Live AWS/Jenkins/Grafana/ZAP screenshots are still pending and have not been fabricated.
 
-Next work: restore Docker storage, rebuild/remediate/rescan base images, resolve the historical-secret gate after rotation, configure AWS/Jenkins/domain inputs, deploy staging and run the complete acceptance chain. Future improvements include coordinated browser-tab refresh, separate database runtime/migration credentials, centralized multi-host metrics, autoscaling, WAF and tested cross-region recovery.
+Next work: restore local Docker storage, configure AWS/Jenkins/domain inputs, deploy staging and run the complete acceptance chain. Production hardening includes separate database runtime/migration credentials and trusted CI roles. Future improvements include coordinated browser-tab refresh, centralized multi-host metrics, autoscaling, WAF and tested cross-region recovery.

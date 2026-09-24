@@ -1,4 +1,6 @@
 {
+  "scope": "Historical initial review, before security remediation. Current source/image results are in security-remediation.json.",
+  "latest_security_evidence": "security-remediation.json",
   "semgrep": {
     "findings": 0,
     "errors": 1,

@@ -1,0 +1,79 @@
+{
+  "recorded_at": "2026-09-24",
+  "tested_commit": "ca0e0e9a4d636df81f38318a0bece128447769ff",
+  "security_run": "https://github.com/sukumar9024/production-grade-devsecops-platform-aws/actions/runs/35995629763",
+  "application_ci_run": "https://github.com/sukumar9024/production-grade-devsecops-platform-aws/actions/runs/35995629667",
+  "conclusion": "success",
+  "report_hash_scope": "SHA256 of downloaded artifact JSON reserialized with Python json.dumps; retained locally in reports/github-security. Original artifacts are attached to the security run.",
+  "image_gate_severities": [
+    "HIGH",
+    "CRITICAL"
+  ],
+  "ignore_unfixed": false,
+  "retired_secret": {
+    "history_fingerprint": "a9bb74f641db1473d19f98c65adeb4f4e3384a6a:backend/.env.example:generic-api-key:9",
+    "owner_confirmed_local_only": true,
+    "local_files_and_running_app_use_different_keys": true,
+    "startup_rejects_original_key": true,
+    "new_git_occurrence_rejected": true,
+    "history_rewritten": false
+  },
+  "runtime_smoke": "passed: built amd64 images, nonroot/read-only Compose services, PostgreSQL/Redis readiness, gateway/frontend, registration/login, database API and logout",
+  "reports": {
+    "trivy-backend.json": {
+      "sha256": "dc8bc27e00e529f05fb6e29b16492c298481eb16f344314db87ce90459811253",
+      "vulnerabilities": 0,
+      "misconfigurations": 0,
+      "secrets": 0
+    },
+    "trivy-frontend.json": {
+      "sha256": "b5e9c59723cbf9260e9f836f203e6a11444287b7524186c0c6fb33ff865e690f",
+      "vulnerabilities": 0,
+      "misconfigurations": 0,
+      "secrets": 0
+    },
+    "gitleaks.json": {
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "unresolved_findings": 0
+    },
+    "npm-audit.json": {
+      "sha256": "7ac7bd3a99225d5ee1316be407185ca9f6d7b675f4751a09764a07cdc1f83d12",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    "pip-audit.json": {
+      "sha256": "b911bc560e337861793be3814c0d9dbf74932dde1950a799fddfb4e2d2ea5e15",
+      "vulnerabilities": 0
+    },
+    "semgrep.json": {
+      "sha256": "f571b1122eb1a7577426cc7a31b44bdc148bd09b4e621f84b89bc1febab1c775",
+      "findings": 0,
+      "errors": 0
+    },
+    "trivy-filesystem.json": {
+      "sha256": "02f0d6e5acc02843b7db8399c18e089778c6a9be5e69e7fbb00e91df32359fc5",
+      "vulnerabilities": 0,
+      "misconfigurations": 0,
+      "secrets": 0
+    },
+    "trivy-iac.json": {
+      "sha256": "f0c5f451d056eef229675481041778e957520a787ccb85670c686310cadc2ede",
+      "vulnerabilities": 0,
+      "misconfigurations": 0,
+      "secrets": 0
+    }
+  },
+  "remaining": [
+    "Local Docker read-only storage recovery (no restart requested)",
+    "Live AWS/Jenkins setup and deployment verification",
+    "Authenticated staging DAST",
+    "Restricted runtime/migration DB credentials",
+    "Alert delivery, log retention, rollback and RDS restore drills"
+  ]
+}

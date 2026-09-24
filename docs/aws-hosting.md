@@ -2,7 +2,7 @@
 
 This guide uses the code consolidated in `develop`. All `********` values are placeholders: replace them only in private local copies. No AWS credentials are included. Commands below provision paid infrastructure when you run them; they have not been run against your AWS account. Start with **dev** and review each Terraform plan.
 
-The application, infrastructure definitions and deployment tools are present. Production acceptance is still pending: the current image/history security gates have unresolved findings, Jenkins needs a secured installation, and live AWS deployment, alerts, rollback and RDS restore have not been demonstrated. See [security findings](security-review.md) and the [requirement audit](project-audit.md). A passing GitHub CI run verifies application tests; it is not a production release approval.
+The application, infrastructure definitions and deployment tools are present. Application and source/image security checks pass in GitHub. Production acceptance is still pending: Jenkins needs a secured installation, and live AWS deployment, staging DAST, alerts, rollback and RDS restore have not been demonstrated. See [security review](security-review.md) and the [requirement audit](project-audit.md). Passing GitHub workflows are not a production release approval.
 
 ## 1. Prepare the account, workstation and private inputs
 
@@ -118,7 +118,7 @@ The roles install Docker/Compose, AWS CLI, host Python dependencies, hardening, 
 
 ## 6. Build, scan and publish immutable images
 
-Use a healthy build host. Run application tests and all source gates in [CI setup](ci-cd.md) before publishing. The current image/history findings in [security review](security-review.md) must be remediated; do not suppress or skip a failed gate. Build the x86_64 platform used by EC2 (especially on an Apple Silicon workstation):
+Use a healthy build host. Run application tests and all source gates in [CI setup](ci-cd.md) before publishing. The previous source/image findings are resolved in [security review](security-review.md); rerun every gate for the actual release and do not suppress or skip failures. Build the x86_64 platform used by EC2 (especially on an Apple Silicon workstation):
 
 ```sh
 cd "$PROJECT_ROOT"
@@ -132,7 +132,7 @@ python3 scripts/publish-images.py --registry "$ECR_REGISTRY" \
   --environment "$PLATFORM_ENVIRONMENT" --sha "$RELEASE_SHA"
 ```
 
-The publisher pushes the scanned local images, resolves their ECR SHA256 digests and writes `reports/release-dev.json` (or the selected environment). ECR tags are immutable; use a new commit for changed images. A production promotion should reuse the verified release images, not rebuild untested content.
+The publisher pushes the scanned local images, resolves their ECR SHA256 digests and writes `reports/release-dev.json` (or the selected environment). The gateway reuses the patched frontend runtime by digest; `deploy.py` persists `GATEWAY_IMAGE` in `.runtime/gateway.env` on the host. Reapply `site.yml` for the updated gateway systemd unit. A gateway image change may recreate that container. ECR tags are immutable; use a new commit for changed images. A production promotion should reuse the verified release images, not rebuild untested content.
 
 ## 7. First deployment only: migrate and create accounts
 
