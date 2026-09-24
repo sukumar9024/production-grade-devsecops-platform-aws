@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from typing import ClassVar
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,6 +20,20 @@ from app.schemas.deployment import (
 
 
 class DeploymentService:
+    ALLOWED_TRANSITIONS: ClassVar[dict] = {
+        DeploymentStatus.PENDING: {
+            DeploymentStatus.IN_PROGRESS,
+            DeploymentStatus.FAILED,
+        },
+        DeploymentStatus.IN_PROGRESS: {
+            DeploymentStatus.SUCCESS,
+            DeploymentStatus.FAILED,
+        },
+        DeploymentStatus.SUCCESS: {DeploymentStatus.ROLLED_BACK},
+        DeploymentStatus.FAILED: {DeploymentStatus.ROLLED_BACK},
+        DeploymentStatus.ROLLED_BACK: set(),
+    }
+
     @staticmethod
     def create_deployment(
         db: Session,
@@ -40,23 +55,15 @@ class DeploymentService:
             version=payload.version.strip(),
             git_commit=payload.git_commit.strip(),
             image_digest=(
-                payload.image_digest.strip()
-                if payload.image_digest
-                else None
+                payload.image_digest.strip() if payload.image_digest else None
             ),
-            pipeline_id=(
-                payload.pipeline_id.strip()
-                if payload.pipeline_id
-                else None
-            ),
+            pipeline_id=(payload.pipeline_id.strip() if payload.pipeline_id else None),
             status=DeploymentStatus.PENDING,
         )
 
-        created_deployment = (
-            DeploymentRepository.create(
-                db=db,
-                deployment=deployment,
-            )
+        created_deployment = DeploymentRepository.create(
+            db=db,
+            deployment=deployment,
         )
 
         return DeploymentRepository.get_by_id(
@@ -109,54 +116,39 @@ class DeploymentService:
             deployment_id=deployment_id,
         )
 
-        if (
-            payload.status is not None
-            and payload.status != deployment.status
-        ):
+        if payload.status is not None and payload.status != deployment.status:
             allowed = DeploymentService.ALLOWED_TRANSITIONS.get(
-                deployment.status,
-                set(),
+                deployment.status, set()
             )
-
-        if payload.status == DeploymentStatus.FAILED:
-        if not payload.failure_reason:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
-                    "failure_reason is required "
-                    "when deployment status is failed."
-                ),
-            )
+            if payload.status not in allowed:
+                raise HTTPException(
+                    status_code=409, detail="Invalid deployment status transition."
+                )
+            if (
+                payload.status == DeploymentStatus.FAILED
+                and not (payload.failure_reason or "").strip()
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail="failure_reason is required when deployment status is failed.",
+                )
+            deployment.status = payload.status
             if payload.status == DeploymentStatus.SUCCESS:
                 deployment.failure_reason = None
-
-            if (
-                payload.status
-                == DeploymentStatus.SUCCESS
-                and deployment.deployed_at is None
-            ):
-                deployment.deployed_at = datetime.now(UTC)
+                if deployment.deployed_at is None:
+                    deployment.deployed_at = datetime.now(UTC)
 
         if payload.image_digest is not None:
-            deployment.image_digest = (
-                payload.image_digest.strip()
-                or None
-            )
+            deployment.image_digest = payload.image_digest.strip() or None
 
         if payload.pipeline_id is not None:
-            deployment.pipeline_id = (
-                payload.pipeline_id.strip()
-                or None
-            )
+            deployment.pipeline_id = payload.pipeline_id.strip() or None
 
         if payload.deployed_at is not None:
             deployment.deployed_at = payload.deployed_at
 
         if payload.failure_reason is not None:
-            deployment.failure_reason = (
-                payload.failure_reason.strip()
-                or None
-            )
+            deployment.failure_reason = payload.failure_reason.strip() or None
 
         DeploymentRepository.save(
             db=db,

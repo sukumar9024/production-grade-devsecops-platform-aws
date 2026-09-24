@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -8,6 +9,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.service import Service
+    from app.models.user import User
 
 
 class Project(
@@ -39,11 +44,11 @@ class Project(
         index=True,
     )
 
-    created_by: Mapped["User"] = relationship(
+    created_by: Mapped[User] = relationship(
         back_populates="projects",
     )
 
-    services: Mapped[list["Service"]] = relationship(
+    services: Mapped[list[Service]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )

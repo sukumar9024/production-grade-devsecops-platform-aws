@@ -5,9 +5,7 @@ from app.db.session import engine
 
 def check_database_connection() -> None:
     with engine.connect() as connection:
-        result = connection.execute(
-            text("SELECT 1")
-        )
+        result = connection.execute(text("SELECT 1"))
 
         value = result.scalar_one()
 

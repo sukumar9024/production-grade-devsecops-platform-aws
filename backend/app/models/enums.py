@@ -1,25 +1,25 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     ACTIVE = "active"
     DISABLED = "disabled"
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     DEV = "dev"
     STAGING = "staging"
     PRODUCTION = "production"
 
 
-class ServiceStatus(str, Enum):
+class ServiceStatus(StrEnum):
     UNKNOWN = "unknown"
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNAVAILABLE = "unavailable"
 
 
-class DeploymentStatus(str, Enum):
+class DeploymentStatus(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     SUCCESS = "success"
@@ -27,14 +27,14 @@ class DeploymentStatus(str, Enum):
     ROLLED_BACK = "rolled_back"
 
 
-class IncidentSeverity(str, Enum):
+class IncidentSeverity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
 
-class IncidentStatus(str, Enum):
+class IncidentStatus(StrEnum):
     OPEN = "open"
     INVESTIGATING = "investigating"
     RESOLVED = "resolved"

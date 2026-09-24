@@ -1,0 +1,21 @@
+# Linux EC2 only: gateway connects to loopback blue/green application slots.
+services:
+  gateway:
+    image: nginxinc/nginx-unprivileged:1.28-alpine
+    container_name: secureops-gateway
+    network_mode: host
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./docker/gateway:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/health/live"]
+      interval: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 128M}
+        reservations: {memory: 32M}

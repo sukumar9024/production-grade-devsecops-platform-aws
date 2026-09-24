@@ -17,7 +17,6 @@ from app.services.audit_service import (
     AuditService,
 )
 
-
 router = APIRouter(
     prefix="/audit-logs",
     tags=["Audit Logs"],

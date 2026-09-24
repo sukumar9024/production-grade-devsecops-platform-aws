@@ -27,7 +27,6 @@ from app.services.incident_service import (
     IncidentService,
 )
 
-
 router = APIRouter(
     prefix="/incidents",
     tags=["Incidents"],
@@ -42,9 +41,7 @@ router = APIRouter(
 def create_incident(
     payload: IncidentCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        engineer_or_admin
-    ),
+    _: User = Depends(engineer_or_admin),
 ) -> IncidentResponse:
     return IncidentService.create_incident(
         db=db,
@@ -70,9 +67,7 @@ def list_incidents(
     incident_status: IncidentStatus | None = None,
     severity: IncidentSeverity | None = None,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> list[IncidentResponse]:
     return IncidentService.list_incidents(
         db=db,
@@ -91,9 +86,7 @@ def list_incidents(
 def get_incident(
     incident_id: uuid.UUID,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> IncidentResponse:
     return IncidentService.get_incident(
         db=db,
@@ -109,13 +102,10 @@ def update_incident(
     incident_id: uuid.UUID,
     payload: IncidentUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        engineer_or_admin
-    ),
+    _: User = Depends(engineer_or_admin),
 ) -> IncidentResponse:
     return IncidentService.update_incident(
         db=db,
         incident_id=incident_id,
         payload=payload,
     )
-    

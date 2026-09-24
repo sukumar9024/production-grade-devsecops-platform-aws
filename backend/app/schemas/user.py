@@ -26,6 +26,15 @@ class UserCreate(BaseModel):
     )
 
 
+class RoleResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: EmailStr
@@ -44,13 +53,6 @@ class UserResponse(BaseModel):
         from_attributes=True,
     )
 
-class RoleResponse(BaseModel):
-    id: uuid.UUID
-    name: str
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
 
 class UserRoleUpdate(BaseModel):
     role: str

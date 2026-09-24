@@ -16,9 +16,7 @@ def test_register_user(
 
     data = response.json()
 
-    assert data["email"] == (
-        "newuser@example.com"
-    )
+    assert data["email"] == ("newuser@example.com")
 
     assert "password" not in data
     assert "password_hash" not in data
@@ -87,11 +85,10 @@ def test_login_wrong_password(
 def test_protected_endpoint_without_token(
     client,
 ):
-    response = client.get(
-        "/api/v1/auth/me"
-    )
+    response = client.get("/api/v1/auth/me")
 
     assert response.status_code == 401
+
 
 def test_refresh_token_flow(
     client,
@@ -105,15 +102,11 @@ def test_refresh_token_flow(
         },
     )
 
-    refresh_token = login.json()[
-        "refresh_token"
-    ]
+    refresh_token = login.json()["refresh_token"]
 
     response = client.post(
         "/api/v1/auth/refresh",
-        json={
-            "refresh_token": refresh_token
-        },
+        json={"refresh_token": refresh_token},
     )
 
     assert response.status_code == 200
@@ -134,19 +127,11 @@ def test_logout_revokes_refresh_token(
 
     tokens = login.json()
 
-    headers = {
-        "Authorization": (
-            f"Bearer {tokens['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {tokens['access_token']}")}
 
     logout = client.post(
         "/api/v1/auth/logout",
-        json={
-            "refresh_token": (
-                tokens["refresh_token"]
-            )
-        },
+        json={"refresh_token": (tokens["refresh_token"])},
         headers=headers,
     )
 
@@ -154,11 +139,7 @@ def test_logout_revokes_refresh_token(
 
     refresh = client.post(
         "/api/v1/auth/refresh",
-        json={
-            "refresh_token": (
-                tokens["refresh_token"]
-            )
-        },
+        json={"refresh_token": (tokens["refresh_token"])},
     )
 
     assert refresh.status_code == 401

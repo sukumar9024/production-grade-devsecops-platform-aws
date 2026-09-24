@@ -1,32 +1,21 @@
-# React + TypeScript + Vite
+# SecureOps frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React and TypeScript operations console. The backend enforces all permissions; the UI provides Viewer read access, Engineer create/update controls, and Admin deletion/audit access.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm ci
+npm run dev
+npm test
+npm run lint
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The development proxy forwards `/api` and `/health` to `http://127.0.0.1:8000`. The default production configuration uses same-origin requests through Nginx. Copy `.env.example` only if a custom API origin is needed; Vite variables are public build-time configuration and must never contain secrets. If using a different production API origin, update Nginx `connect-src` and backend CORS accordingly.
+
+The production image uses a Node build stage and unprivileged Nginx on port 8080. It resolves the backend by the Docker network name `backend:8000`, serves React routes through an SPA fallback, and exposes `/health` as the frontend probe. `/health/live` and `/health/ready` are proxied to the backend. TLS, HSTS, and authentication rate limits belong to the outer ingress.
+
+Access tokens are held in memory; rotating refresh tokens are stored in browser local storage. Session restore and authenticated requests share a single in-flight token rotation, including React StrictMode initialization. Logout clears local credentials immediately and attempts server-side revocation. Browser tokens remain exposed to scripts on the origin; deployment must retain the restrictive CSP and avoid third-party scripts. Cross-tab simultaneous refresh is not coordinated; a rejected rotation requires signing in again.
+
+Resource tables are paginated. Dashboard totals exhaust API pages, and active incidents include both open and investigating records. The Services page derives last deployment time from recorded deployments. Health status is the recorded service status, not a browser-issued health probe.
+
+Tests cover token rotation/revocation, validation messages, route permissions, project edit payloads, registration, service visibility, and dashboard totals across API pages. Container verification should additionally exercise `/`, a nested SPA route, backend proxying, health checks, and non-root execution.

@@ -15,3 +15,5 @@ class DependencyHealth(BaseModel):
 class ReadinessResponse(BaseModel):
     status: Literal["ready", "not_ready"]
     database: DependencyHealth
+    redis: DependencyHealth
+    request_id: str | None = None

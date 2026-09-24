@@ -1,0 +1,12 @@
+---
+# Nonsecret Terraform outputs. Pass -e @runtime.yml; never include secret values.
+app_secret_arn: arn:aws:secretsmanager:ap-south-1:ACCOUNT:secret:secureops-dev/application-SUFFIX
+database_secret_arn: arn:aws:secretsmanager:ap-south-1:ACCOUNT:secret:rds!db-SUFFIX
+database_host: REPLACE_RDS_ENDPOINT
+redis_secret_arn: arn:aws:secretsmanager:ap-south-1:ACCOUNT:secret:secureops-dev/redis-SUFFIX
+redis_host: REPLACE_REDIS_ENDPOINT
+application_bucket: REPLACE_BUCKET
+ecr_registry: ACCOUNT.dkr.ecr.ap-south-1.amazonaws.com
+opensearch_endpoint: ''
+target_group_arn: arn:aws:elasticloadbalancing:ap-south-1:ACCOUNT:targetgroup/secureops-dev/REPLACE
+cors_origins: https://secureops-dev.example.com

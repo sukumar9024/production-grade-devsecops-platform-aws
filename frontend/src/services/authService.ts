@@ -1,4 +1,4 @@
-import authClient from "../api/authClient";
+import authClient from "../api/apiClient";
 import apiClient from "../api/client";
 
 import type {
@@ -9,6 +9,9 @@ import type {
 
 
 export const authService = {
+  async register(payload: { email: string; username: string; full_name: string | null; password: string }): Promise<User> {
+    return (await authClient.post<User>("/api/v1/auth/register", payload)).data;
+  },
   async login(
     payload: LoginRequest
   ): Promise<TokenResponse> {
@@ -47,7 +50,7 @@ export const authService = {
   async logout(
     refreshToken: string
   ): Promise<void> {
-    await apiClient.post(
+    await authClient.post(
       "/api/v1/auth/logout",
       {
         refresh_token: refreshToken,

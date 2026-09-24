@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from typing import ClassVar
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,7 +20,7 @@ from app.schemas.incident import (
 
 
 class IncidentService:
-    ALLOWED_TRANSITIONS = {
+    ALLOWED_TRANSITIONS: ClassVar[dict] = {
         IncidentStatus.OPEN: {
             IncidentStatus.INVESTIGATING,
             IncidentStatus.RESOLVED,
@@ -58,11 +59,9 @@ class IncidentService:
             detected_at=datetime.now(UTC),
         )
 
-        created_incident = (
-            IncidentRepository.create(
-                db=db,
-                incident=incident,
-            )
+        created_incident = IncidentRepository.create(
+            db=db,
+            incident=incident,
         )
 
         return IncidentRepository.get_by_id(
@@ -117,15 +116,10 @@ class IncidentService:
             incident_id=incident_id,
         )
 
-        if (
-            payload.status is not None
-            and payload.status != incident.status
-        ):
-            allowed = (
-                IncidentService.ALLOWED_TRANSITIONS.get(
-                    incident.status,
-                    set(),
-                )
+        if payload.status is not None and payload.status != incident.status:
+            allowed = IncidentService.ALLOWED_TRANSITIONS.get(
+                incident.status,
+                set(),
             )
 
             if payload.status not in allowed:
@@ -147,9 +141,7 @@ class IncidentService:
             incident.title = payload.title.strip()
 
         if payload.description is not None:
-            incident.description = (
-                payload.description.strip()
-            )
+            incident.description = payload.description.strip()
 
         if payload.severity is not None:
             incident.severity = payload.severity

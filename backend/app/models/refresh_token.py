@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,6 +10,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class RefreshToken(
@@ -53,6 +57,6 @@ class RefreshToken(
         nullable=True,
     )
 
-    user: Mapped["User"] = relationship(
+    user: Mapped[User] = relationship(
         back_populates="refresh_tokens",
     )

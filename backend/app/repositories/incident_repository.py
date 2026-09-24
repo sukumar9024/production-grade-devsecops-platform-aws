@@ -8,6 +8,7 @@ from app.models.enums import (
     IncidentStatus,
 )
 from app.models.incident import Incident
+from app.repositories.audit_log_repository import AuditLogRepository
 
 
 class IncidentRepository:
@@ -18,12 +19,8 @@ class IncidentRepository:
     ) -> Incident | None:
         statement = (
             select(Incident)
-            .options(
-                joinedload(Incident.service)
-            )
-            .where(
-                Incident.id == incident_id
-            )
+            .options(joinedload(Incident.service))
+            .where(Incident.id == incident_id)
         )
 
         return db.scalar(statement)
@@ -39,38 +36,22 @@ class IncidentRepository:
     ) -> list[Incident]:
         statement = (
             select(Incident)
-            .options(
-                joinedload(Incident.service)
-            )
-            .order_by(
-                Incident.detected_at.desc()
-            )
+            .options(joinedload(Incident.service))
+            .order_by(Incident.detected_at.desc())
         )
 
         if service_id is not None:
-            statement = statement.where(
-                Incident.service_id == service_id
-            )
+            statement = statement.where(Incident.service_id == service_id)
 
         if incident_status is not None:
-            statement = statement.where(
-                Incident.status == incident_status
-            )
+            statement = statement.where(Incident.status == incident_status)
 
         if severity is not None:
-            statement = statement.where(
-                Incident.severity == severity
-            )
+            statement = statement.where(Incident.severity == severity)
 
-        statement = (
-            statement
-            .offset(offset)
-            .limit(limit)
-        )
+        statement = statement.offset(offset).limit(limit)
 
-        return list(
-            db.scalars(statement).all()
-        )
+        return list(db.scalars(statement).all())
 
     @staticmethod
     def create(
@@ -78,6 +59,8 @@ class IncidentRepository:
         incident: Incident,
     ) -> Incident:
         db.add(incident)
+        db.flush()
+        AuditLogRepository.stage(db, "incident.created", "incident", incident.id)
         db.commit()
         db.refresh(incident)
 
@@ -89,6 +72,8 @@ class IncidentRepository:
         incident: Incident,
     ) -> Incident:
         db.add(incident)
+        db.flush()
+        AuditLogRepository.stage(db, "incident.updated", "incident", incident.id)
         db.commit()
         db.refresh(incident)
 

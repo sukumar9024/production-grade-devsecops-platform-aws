@@ -15,6 +15,12 @@ export function getApiErrorMessage(
     return detail;
   }
 
+  if (Array.isArray(detail)) {
+    return detail.map(item => `${Array.isArray(item.loc) ? item.loc.filter((part: unknown) => part !== "body").join(".") : "Input"}: ${typeof item.msg === "string" ? item.msg : "Invalid value"}`).join("; ");
+  }
+
+  if (!error.response) return "Unable to reach the server. Please try again.";
+
   switch (
     error.response?.status
   ) {
@@ -38,6 +44,9 @@ export function getApiErrorMessage(
         "The submitted data "
         + "is invalid."
       );
+
+    case 429:
+      return "Too many requests. Please wait and try again.";
 
     case 500:
       return (

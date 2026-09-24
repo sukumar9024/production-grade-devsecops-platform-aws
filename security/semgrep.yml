@@ -1,0 +1,28 @@
+rules:
+  - id: python-shell-injection
+    languages: [python]
+    severity: ERROR
+    message: Avoid shell=True; pass an argument array to subprocess.
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+  - id: python-eval
+    languages: [python]
+    severity: ERROR
+    message: Never evaluate untrusted Python expressions.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+  - id: javascript-eval
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Never evaluate untrusted JavaScript.
+    pattern: eval(...)
+  - id: insecure-jwt-verification
+    languages: [python]
+    severity: ERROR
+    message: JWT verification cannot be disabled.
+    pattern: 'jwt.decode(..., options={..., "verify_signature": False, ...}, ...)'
+  - id: unsafe-react-html
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Rendering raw HTML requires an explicit reviewed sanitization boundary.
+    pattern: <$TAG dangerouslySetInnerHTML={...} ... />

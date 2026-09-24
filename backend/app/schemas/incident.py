@@ -10,6 +10,8 @@ from app.models.enums import (
 
 
 class IncidentCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     service_id: uuid.UUID
 
     title: str = Field(
@@ -26,6 +28,8 @@ class IncidentCreate(BaseModel):
 
 
 class IncidentUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     title: str | None = Field(
         default=None,
         min_length=3,

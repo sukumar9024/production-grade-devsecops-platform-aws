@@ -1,3 +1,4 @@
+import app.db.model_registry  # noqa: F401
 from app.db.base import Base
 
 

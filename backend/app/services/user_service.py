@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.roles import Roles
 from app.models.enums import UserStatus
 from app.models.user import User
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.role_repository import RoleRepository
 from app.repositories.user_repository import UserRepository
 
@@ -63,6 +64,7 @@ class UserService:
                 detail="Role configuration is missing.",
             )
 
+        AuditLogRepository.stage(db, "user.role.changed", "user", user.id)
         user.role_id = role.id
         user.role = role
 
@@ -82,6 +84,7 @@ class UserService:
             user_id=user_id,
         )
 
+        AuditLogRepository.stage(db, "user.status.changed", "user", user.id)
         user.status = user_status
 
         return UserRepository.save(

@@ -39,56 +39,39 @@ class JsonFormatter(logging.Formatter):
         record: logging.LogRecord,
     ) -> str:
         log_record: dict[str, Any] = {
-            "timestamp": datetime.now(
-                UTC
-            ).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "service": "backend",
             "environment": settings.environment,
             "logger": record.name,
             "message": record.getMessage(),
         }
-        request_id = (
-            get_current_request_id()
-        )
+        request_id = get_current_request_id()
 
         if request_id is not None:
-            log_record[
-                "request_id"
-            ] = request_id
+            log_record["request_id"] = request_id
         for key, value in record.__dict__.items():
-            if (
-                key not in RESERVED_LOG_RECORD_FIELDS
-                and key not in log_record
-            ):
+            if key not in RESERVED_LOG_RECORD_FIELDS and key not in log_record:
                 log_record[key] = value
 
         if record.exc_info:
-            log_record["exception"] = (
-                self.formatException(
-                    record.exc_info
-                )
-            )
+            log_record["exception"] = self.formatException(record.exc_info)
 
         return json.dumps(
             log_record,
             default=str,
         )
-    def configure_logging() -> None:
+
+
+def configure_logging() -> None:
     handler = logging.StreamHandler()
 
-    handler.setFormatter(
-        JsonFormatter()
-    )
+    handler.setFormatter(JsonFormatter())
 
     root_logger = logging.getLogger()
 
     root_logger.handlers.clear()
 
-    root_logger.addHandler(
-        handler
-    )
+    root_logger.addHandler(handler)
 
-    root_logger.setLevel(
-        settings.log_level.upper()
-    )
+    root_logger.setLevel(settings.log_level.upper())

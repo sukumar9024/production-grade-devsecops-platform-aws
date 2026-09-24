@@ -7,6 +7,8 @@ from app.models.enums import DeploymentStatus
 
 
 class DeploymentCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     service_id: uuid.UUID
 
     version: str = Field(
@@ -31,6 +33,8 @@ class DeploymentCreate(BaseModel):
 
 
 class DeploymentUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     status: DeploymentStatus | None = None
 
     image_digest: str | None = Field(

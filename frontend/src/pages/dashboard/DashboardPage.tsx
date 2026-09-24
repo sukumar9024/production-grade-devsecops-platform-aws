@@ -115,7 +115,7 @@ export function DashboardPage() {
         </article>
 
         <article className="card">
-          <h3>Open Incidents</h3>
+          <h3>Active Incidents</h3>
           <strong>
             {
               dashboard
@@ -126,7 +126,7 @@ export function DashboardPage() {
         </article>
       </div>
 
-      <section className="card">
+      <section className="card table-card">
         <h2>
           Recent Deployments
         </h2>
@@ -195,14 +195,14 @@ export function DashboardPage() {
         )}
       </section>
 
-      <section className="card">
-        <h2>Open Incidents</h2>
+      <section className="card table-card">
+        <h2>Active Incidents</h2>
 
         {dashboard
           .openIncidents
           .length === 0 ? (
           <p>
-            No open incidents.
+            No active incidents.
           </p>
         ) : (
           <table>

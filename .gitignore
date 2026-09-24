@@ -30,3 +30,26 @@ htmlcov/
 # Logs
 *.log
 logs/
+
+# Frontend build and dependencies
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Terraform and runtime evidence containing environment details
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+.runtime/
+.env.runtime*
+.env.aws
+reports/
+.tools/
+monitoring/alertmanager.runtime.yml
+monitoring/targets/backend.json
+monitoring/textfile/*.prom
+docker/certs/
+infrastructure/ansible/runtime.yml

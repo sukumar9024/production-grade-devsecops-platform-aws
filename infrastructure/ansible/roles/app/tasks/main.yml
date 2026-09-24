@@ -1,0 +1,90 @@
+---
+- name: Require explicit nonsecret resource identifiers
+  ansible.builtin.assert:
+    that:
+      - app_secret_arn is defined
+      - database_secret_arn is defined
+      - database_host is defined
+      - redis_secret_arn is defined
+      - redis_host is defined
+      - application_bucket is defined
+      - ecr_registry is defined
+    fail_msg: Supply an environment extra-vars YAML populated from Terraform outputs; see runtime.example.yml.
+- name: Copy standalone production Compose manifests
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/{{ item }}"
+    dest: "{{ secureops_root }}/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - compose.prod.yaml
+    - compose.gateway.yaml
+    - compose.observability.prod.yaml
+- name: Copy deployment scripts
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/{{ item }}/"
+    dest: "{{ secureops_root }}/{{ item }}/"
+    owner: root
+    group: root
+    mode: preserve
+    directory_mode: '0750'
+  loop:
+    - scripts
+- name: Create gateway configuration directory
+  ansible.builtin.file:
+    path: "{{ secureops_root }}/docker/gateway"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Install gateway configuration
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/docker/gateway/default.conf"
+    dest: "{{ secureops_root }}/docker/gateway/default.conf"
+    mode: '0644'
+- name: Initialize gateway upstream without replacing the active release
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/docker/gateway/upstream.conf"
+    dest: "{{ secureops_root }}/docker/gateway/upstream.conf"
+    mode: '0644'
+    force: false
+- name: Install nonsecret AWS resource configuration
+  ansible.builtin.template:
+    src: env.aws.j2
+    dest: "{{ secureops_root }}/.env.aws"
+    owner: root
+    group: root
+    mode: '0600'
+- name: Install runtime unit
+  ansible.builtin.template:
+    src: secureops.service.j2
+    dest: /etc/systemd/system/secureops.service
+    owner: root
+    group: root
+    mode: '0644'
+- name: Reload units (first release is started by deploy.py)
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Create RDS certificate directory
+  ansible.builtin.file:
+    path: "{{ secureops_root }}/docker/certs"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: Download official RDS TLS trust bundle
+  ansible.builtin.get_url:
+    url: https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+    dest: "{{ secureops_root }}/docker/certs/rds-global-bundle.pem"
+    owner: root
+    group: root
+    mode: '0644'
+- name: Install host deployment wrapper
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../files/deploy-release.py"
+    dest: "{{ secureops_root }}/scripts/deploy-release.py"
+    owner: root
+    group: root
+    mode: '0750'

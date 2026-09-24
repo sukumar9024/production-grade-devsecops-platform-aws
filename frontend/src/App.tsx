@@ -1,11 +1,12 @@
 import {
-  Navigate,
+  Link,
   Route,
   Routes,
 } from "react-router-dom";
 
 import { AppLayout } from "./layouts/AppLayout";
 
+import { RegisterPage } from "./pages/auth/RegisterPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { UnauthorizedPage } from "./pages/auth/UnauthorizedPage";
 
@@ -23,6 +24,7 @@ import { RoleRoute } from "./routes/RoleRoute";
 export default function App() {
   return (
     <Routes>
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/login"
         element={<LoginPage />}
@@ -80,10 +82,7 @@ export default function App() {
       <Route
         path="*"
         element={
-          <Navigate
-            to="/"
-            replace
-          />
+          <main><h1>404 — Page not found</h1><Link to="/">Return to dashboard</Link></main>
         }
       />
     </Routes>

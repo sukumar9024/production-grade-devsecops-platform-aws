@@ -1,0 +1,40 @@
+---
+- name: Deploy and verify one private application host at a time
+  hosts: role_app
+  become: true
+  serial: 1
+  any_errors_fatal: true
+  gather_facts: false
+  vars:
+    secureops_root: /opt/secureops
+    git_sha: "{{ git_commit }}"
+  tasks:
+    - name: Require immutable release metadata
+      ansible.builtin.assert:
+        that:
+          - git_sha is defined
+          - pipeline_id is defined
+          - backend_image is defined
+          - frontend_image is defined
+          - git_sha is match('^[a-f0-9]{40}$')
+          - backend_image is search('@sha256:[a-f0-9]{64}$')
+          - frontend_image is search('@sha256:[a-f0-9]{64}$')
+    - name: Fetch runtime secrets and deploy with authenticated smoke and ALB verification
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3.11
+          - "{{ secureops_root }}/scripts/deploy-release.py"
+          - --root
+          - "{{ secureops_root }}"
+          - --git-sha
+          - "{{ git_sha }}"
+          - --pipeline-id
+          - "{{ pipeline_id | string }}"
+          - --environment
+          - "{{ application_environment }}"
+          - --backend-image
+          - "{{ backend_image }}"
+          - --frontend-image
+          - "{{ frontend_image }}"
+      no_log: true
+      changed_when: true

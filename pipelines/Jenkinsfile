@@ -1,0 +1,94 @@
+pipeline {
+  agent { label 'secureops-linux' }
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    timeout(time: 90, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '30', artifactNumToKeepStr: '15'))
+  }
+  parameters {
+    string(name: 'AWS_REGION', defaultValue: 'ap-south-1', description: 'Region of reviewed Terraform environments')
+    string(name: 'ECR_REGISTRY', defaultValue: '', description: 'Account registry host, without https://')
+    string(name: 'STAGING_URL', defaultValue: '', description: 'HTTPS staging application URL')
+    string(name: 'PRODUCTION_URL', defaultValue: '', description: 'HTTPS production application URL')
+    string(name: 'ANSIBLE_SSM_BUCKET', defaultValue: '', description: 'Encrypted SSM file transfer bucket')
+    string(name: 'ANSIBLE_SSM_KMS_KEY', defaultValue: '', description: 'Bootstrap KMS key ARN for SSM transfers')
+  }
+  environment {
+    AWS_REGION = "${params.AWS_REGION}"
+    ANSIBLE_SSM_BUCKET = "${params.ANSIBLE_SSM_BUCKET}"
+    ANSIBLE_SSM_KMS_KEY = "${params.ANSIBLE_SSM_KMS_KEY}"
+  }
+  stages {
+    stage('Checkout') { steps { checkout scm; sh 'mkdir -p reports' } }
+    stage('Install') {
+      steps {
+        sh '''python3.14 -m venv backend/.venv
+backend/.venv/bin/pip install -r backend/requirements-dev.txt
+cd frontend && npm ci'''
+      }
+    }
+    stage('Lint') { steps { sh 'backend/.venv/bin/ruff check backend && cd frontend && npm run lint && npm run build' } }
+    stage('Unit and API tests') {
+      steps { sh 'bash scripts/test-backend.sh && python3 -m unittest discover -s tests/platform && cd frontend && npm test' }
+    }
+    stage('SAST') { steps { sh 'bash scripts/security-scan.sh sast' } }
+    stage('Dependency scan') { steps { sh 'bash scripts/security-scan.sh dependencies' } }
+    stage('Secrets and filesystem') { steps { sh 'bash scripts/security-scan.sh history && bash scripts/security-scan.sh filesystem' } }
+    stage('IaC validation and scan') { steps { sh 'bash scripts/security-scan.sh iac' } }
+    stage('Build immutable images') {
+      steps {
+        sh '''docker build --platform linux/amd64 -t secureops-backend:$GIT_COMMIT backend
+docker build --platform linux/amd64 -t secureops-frontend:$GIT_COMMIT frontend'''
+      }
+    }
+    stage('Container scan') { steps { sh 'IMAGE_TAG=$GIT_COMMIT bash scripts/security-scan.sh images' } }
+    stage('Publish and deploy staging') {
+      when { anyOf { branch 'main'; branch 'develop'; branch 'release/*' } }
+      steps {
+        withCredentials([file(credentialsId: 'secureops-staging-runtime', variable: 'RUNTIME_VARS')]) {
+          sh 'python3 scripts/publish-images.py --registry "$ECR_REGISTRY" --environment staging --sha "$GIT_COMMIT"'
+          sh 'bash scripts/deploy-environment.sh staging "$RUNTIME_VARS"'
+        }
+      }
+    }
+    stage('Integration and DAST') {
+      when { anyOf { branch 'main'; branch 'develop'; branch 'release/*' } }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'secureops-staging-smoke', usernameVariable: 'SMOKE_IDENTITY', passwordVariable: 'SMOKE_PASSWORD')]) {
+          sh 'python3 scripts/smoke.py "$STAGING_URL" && python3 scripts/dast.py "$STAGING_URL"'
+        }
+      }
+    }
+    stage('Approve production') {
+      when { beforeInput true; branch 'main' }
+      input { message 'Staging verified. Deploy these same scanned images to production?'; submitter 'secureops-release-managers' }
+      steps { echo 'Production approval recorded.' }
+    }
+    stage('Production deployment') {
+      when { branch 'main' }
+      steps {
+        withCredentials([file(credentialsId: 'secureops-prod-runtime', variable: 'RUNTIME_VARS')]) {
+          sh 'python3 scripts/publish-images.py --registry "$ECR_REGISTRY" --environment prod --sha "$GIT_COMMIT"'
+          sh 'bash scripts/deploy-environment.sh prod "$RUNTIME_VARS"'
+          script {
+            try {
+              withCredentials([usernamePassword(credentialsId: 'secureops-prod-smoke', usernameVariable: 'SMOKE_IDENTITY', passwordVariable: 'SMOKE_PASSWORD')]) {
+                sh 'python3 scripts/smoke.py "$PRODUCTION_URL"'
+              }
+            } catch (Exception failure) {
+              sh 'bash scripts/deploy-environment.sh prod "$RUNTIME_VARS" --rollback'
+              throw failure
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      junit allowEmptyResults: true, testResults: 'reports/*tests.xml'
+      archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true, fingerprint: true
+    }
+  }
+}

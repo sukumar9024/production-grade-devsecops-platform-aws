@@ -9,6 +9,7 @@ from app.core.metrics import (
     HTTP_REQUEST_DURATION_SECONDS,
     HTTP_REQUESTS_TOTAL,
 )
+from app.core.request_context import get_route_template
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):
@@ -20,9 +21,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         start_time = time.perf_counter()
 
         try:
-            response = await call_next(
-                request
-            )
+            response = await call_next(request)
 
             status_code = response.status_code
 
@@ -51,23 +50,12 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         status_code: int,
         start_time: float,
     ) -> None:
-        duration = (
-            time.perf_counter()
-            - start_time
-        )
+        duration = time.perf_counter() - start_time
 
-        route = request.scope.get("route")
-
-        endpoint = (
-            route.path
-            if route is not None
-            else "unmatched"
-        )
+        endpoint = get_route_template(request)
 
         method = request.method
-        status_code_label = str(
-            status_code
-        )
+        status_code_label = str(status_code)
 
         HTTP_REQUESTS_TOTAL.labels(
             method=method,

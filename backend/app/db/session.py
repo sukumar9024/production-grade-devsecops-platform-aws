@@ -1,9 +1,11 @@
 from collections.abc import Generator
 
+from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
+from app.core.request_context import get_client_ip
 from app.db.metrics import (
     register_database_metrics,
 )
@@ -11,11 +13,10 @@ from app.db.metrics import (
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
+    connect_args={"connect_timeout": 3},
 )
 
-register_database_metrics(
-    engine
-)
+register_database_metrics(engine)
 
 
 SessionLocal = sessionmaker(
@@ -26,8 +27,9 @@ SessionLocal = sessionmaker(
 )
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db(request: Request) -> Generator[Session]:
     db = SessionLocal()
+    db.info["client_ip"] = get_client_ip(request)
 
     try:
         yield db

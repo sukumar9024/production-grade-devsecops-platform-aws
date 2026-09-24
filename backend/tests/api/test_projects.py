@@ -13,17 +13,13 @@ def test_admin_can_create_project(
         headers=headers,
         json={
             "name": "SecureOps Test",
-            "description": (
-                "Test project"
-            ),
+            "description": ("Test project"),
         },
     )
 
     assert response.status_code == 201
 
-    assert response.json()[
-        "name"
-    ] == "SecureOps Test"
+    assert response.json()["name"] == "SecureOps Test"
 
 
 def test_viewer_cannot_create_project(
@@ -39,9 +35,7 @@ def test_viewer_cannot_create_project(
     response = client.post(
         "/api/v1/projects",
         headers=headers,
-        json={
-            "name": "Forbidden Project"
-        },
+        json={"name": "Forbidden Project"},
     )
 
     assert response.status_code == 403
@@ -57,9 +51,7 @@ def test_duplicate_project_returns_409(
         "SecurePassword123!",
     )
 
-    payload = {
-        "name": "Duplicate Project"
-    }
+    payload = {"name": "Duplicate Project"}
 
     first = client.post(
         "/api/v1/projects",

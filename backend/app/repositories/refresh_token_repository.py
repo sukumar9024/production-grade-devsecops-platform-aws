@@ -23,9 +23,7 @@ class RefreshTokenRepository:
         db: Session,
         jti: str,
     ) -> RefreshToken | None:
-        statement = select(RefreshToken).where(
-            RefreshToken.jti == jti
-        )
+        statement = select(RefreshToken).where(RefreshToken.jti == jti)
 
         return db.scalar(statement)
 

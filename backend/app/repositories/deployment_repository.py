@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.deployment import Deployment
 from app.models.enums import DeploymentStatus
+from app.repositories.audit_log_repository import AuditLogRepository
 
 
 class DeploymentRepository:
@@ -15,12 +16,8 @@ class DeploymentRepository:
     ) -> Deployment | None:
         statement = (
             select(Deployment)
-            .options(
-                joinedload(Deployment.service)
-            )
-            .where(
-                Deployment.id == deployment_id
-            )
+            .options(joinedload(Deployment.service))
+            .where(Deployment.id == deployment_id)
         )
 
         return db.scalar(statement)
@@ -35,33 +32,19 @@ class DeploymentRepository:
     ) -> list[Deployment]:
         statement = (
             select(Deployment)
-            .options(
-                joinedload(Deployment.service)
-            )
-            .order_by(
-                Deployment.created_at.desc()
-            )
+            .options(joinedload(Deployment.service))
+            .order_by(Deployment.created_at.desc())
         )
 
         if service_id is not None:
-            statement = statement.where(
-                Deployment.service_id == service_id
-            )
+            statement = statement.where(Deployment.service_id == service_id)
 
         if status is not None:
-            statement = statement.where(
-                Deployment.status == status
-            )
+            statement = statement.where(Deployment.status == status)
 
-        statement = (
-            statement
-            .offset(offset)
-            .limit(limit)
-        )
+        statement = statement.offset(offset).limit(limit)
 
-        return list(
-            db.scalars(statement).all()
-        )
+        return list(db.scalars(statement).all())
 
     @staticmethod
     def create(
@@ -69,6 +52,8 @@ class DeploymentRepository:
         deployment: Deployment,
     ) -> Deployment:
         db.add(deployment)
+        db.flush()
+        AuditLogRepository.stage(db, "deployment.created", "deployment", deployment.id)
         db.commit()
         db.refresh(deployment)
 
@@ -80,6 +65,8 @@ class DeploymentRepository:
         deployment: Deployment,
     ) -> Deployment:
         db.add(deployment)
+        db.flush()
+        AuditLogRepository.stage(db, "deployment.updated", "deployment", deployment.id)
         db.commit()
         db.refresh(deployment)
 

@@ -1,0 +1,38 @@
+groups:
+  - name: secureops
+    rules:
+      - alert: ServiceUnavailable
+        expr: up{job="backend"} == 0 or absent(up{job="backend"}) or probe_success{job="readiness"} == 0 or absent(probe_success{job="readiness"})
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Backend metrics unavailable; check process and dependencies", runbook: "docs/runbooks/incidents.md"}
+      - alert: HighCPU
+        expr: 100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 85
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Host CPU above 85% for 5 minutes"}
+      - alert: HighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 85
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Host memory above 85%"}
+      - alert: DiskSpaceLow
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes < 0.15
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "Filesystem free space below 15%"}
+      - alert: APIErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.01) > 0.05
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "API 5xx error rate exceeds 5%"}
+      - alert: DeploymentFailed
+        expr: secureops_deployment_success == 0
+        for: 0m
+        labels: {severity: critical}
+        annotations: {summary: "Deployment failed; inspect rollback verification and release metadata"}
+      - alert: AuthenticationFailures
+        expr: rate(login_failures_total[5m]) > 0.5
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Sustained authentication failures"}

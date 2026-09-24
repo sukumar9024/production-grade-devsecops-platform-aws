@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,6 +10,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import UserStatus
+
+if TYPE_CHECKING:
+    from app.models.audit_log import AuditLog
+    from app.models.project import Project
+    from app.models.refresh_token import RefreshToken
+    from app.models.role import Role
 
 
 class User(
@@ -68,19 +75,19 @@ class User(
         index=True,
     )
 
-    role: Mapped["Role"] = relationship(
+    role: Mapped[Role] = relationship(
         back_populates="users",
     )
 
-    projects: Mapped[list["Project"]] = relationship(
+    projects: Mapped[list[Project]] = relationship(
         back_populates="created_by",
     )
 
-    audit_logs: Mapped[list["AuditLog"]] = relationship(
+    audit_logs: Mapped[list[AuditLog]] = relationship(
         back_populates="user",
     )
 
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
-    back_populates="user",
-    cascade="all, delete-orphan",
+    refresh_tokens: Mapped[list[RefreshToken]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
     )

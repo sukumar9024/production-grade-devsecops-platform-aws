@@ -32,13 +32,11 @@ class ServiceService:
 
         normalized_name = payload.name.strip()
 
-        existing_service = (
-            ServiceRepository.get_by_identity(
-                db=db,
-                project_id=payload.project_id,
-                name=normalized_name,
-                environment=payload.environment,
-            )
+        existing_service = ServiceRepository.get_by_identity(
+            db=db,
+            project_id=payload.project_id,
+            name=normalized_name,
+            environment=payload.environment,
         )
 
         if existing_service is not None:
@@ -55,23 +53,15 @@ class ServiceService:
             project_id=payload.project_id,
             name=normalized_name,
             environment=payload.environment,
-            version=(
-                payload.version.strip()
-                if payload.version
-                else None
-            ),
+            version=(payload.version.strip() if payload.version else None),
             health_check_url=(
-                str(payload.health_check_url)
-                if payload.health_check_url
-                else None
+                str(payload.health_check_url) if payload.health_check_url else None
             ),
         )
 
-        created_service = (
-            ServiceRepository.create(
-                db=db,
-                service=service,
-            )
+        created_service = ServiceRepository.create(
+            db=db,
+            service=service,
         )
 
         return ServiceRepository.get_by_id(
@@ -124,11 +114,7 @@ class ServiceService:
             service_id=service_id,
         )
 
-        new_name = (
-            payload.name.strip()
-            if payload.name is not None
-            else service.name
-        )
+        new_name = payload.name.strip() if payload.name is not None else service.name
 
         new_environment = (
             payload.environment
@@ -136,19 +122,14 @@ class ServiceService:
             else service.environment
         )
 
-        existing_service = (
-            ServiceRepository.get_by_identity(
-                db=db,
-                project_id=service.project_id,
-                name=new_name,
-                environment=new_environment,
-            )
+        existing_service = ServiceRepository.get_by_identity(
+            db=db,
+            project_id=service.project_id,
+            name=new_name,
+            environment=new_environment,
         )
 
-        if (
-            existing_service is not None
-            and existing_service.id != service.id
-        ):
+        if existing_service is not None and existing_service.id != service.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
@@ -165,18 +146,13 @@ class ServiceService:
             service.environment = payload.environment
 
         if payload.version is not None:
-            service.version = (
-                payload.version.strip()
-                or None
-            )
+            service.version = payload.version.strip() or None
 
         if payload.status is not None:
             service.status = payload.status
 
         if payload.health_check_url is not None:
-            service.health_check_url = str(
-                payload.health_check_url
-            )
+            service.health_check_url = str(payload.health_check_url)
 
         ServiceRepository.save(
             db=db,

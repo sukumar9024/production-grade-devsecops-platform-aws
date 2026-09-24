@@ -1,0 +1,43 @@
+# Standalone AWS application slot. Do not merge with compose.yaml.
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?An immutable backend image digest is required}
+    env_file:
+      - path: ${RUNTIME_ENV_FILE:-.env.runtime}
+        format: raw
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    volumes:
+      - ./docker/certs/rds-global-bundle.pem:/etc/ssl/certs/rds-global-bundle.pem:ro
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports: ["127.0.0.1:${METRICS_PORT:-18000}:8000"]
+    networks: [app]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+    deploy:
+      resources:
+        limits: {cpus: "1", memory: 768M}
+        reservations: {memory: 256M}
+  frontend:
+    image: ${FRONTEND_IMAGE:?An immutable frontend image digest is required}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports: ["127.0.0.1:${APP_PORT:?Slot port is required}:8080"]
+    networks: [app]
+    depends_on:
+      backend: {condition: service_healthy}
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 128M}
+        reservations: {memory: 32M}
+networks:
+  app:

@@ -4,7 +4,6 @@ from prometheus_client import (
     generate_latest,
 )
 
-
 router = APIRouter(
     tags=["Metrics"],
 )

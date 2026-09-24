@@ -1,0 +1,10 @@
+---
+- name: Install monitoring configuration and dashboards
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/monitoring/"
+    dest: "{{ secureops_root }}/monitoring/"
+    owner: root
+    group: root
+    mode: preserve
+    directory_mode: '0755'
+# deploy.py controls startup after runtime credentials and first release exist.

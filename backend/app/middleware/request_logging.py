@@ -5,15 +5,12 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from app.core.request_context import get_route_template
 
-logger = logging.getLogger(
-    "secureops.http"
-)
+logger = logging.getLogger("secureops.http")
 
 
-class RequestLoggingMiddleware(
-    BaseHTTPMiddleware
-):
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self,
         request: Request,
@@ -22,15 +19,10 @@ class RequestLoggingMiddleware(
         start_time = time.perf_counter()
 
         try:
-            response = await call_next(
-                request
-            )
+            response = await call_next(request)
 
         except Exception:
-            duration_ms = (
-                time.perf_counter()
-                - start_time
-            ) * 1000
+            duration_ms = (time.perf_counter() - start_time) * 1000
 
             self._log_request(
                 request=request,
@@ -41,10 +33,7 @@ class RequestLoggingMiddleware(
 
             raise
 
-        duration_ms = (
-            time.perf_counter()
-            - start_time
-        ) * 1000
+        duration_ms = (time.perf_counter() - start_time) * 1000
 
         level = (
             logging.ERROR
@@ -70,15 +59,7 @@ class RequestLoggingMiddleware(
         duration_ms: float,
         level: int,
     ) -> None:
-        route = request.scope.get(
-            "route"
-        )
-
-        endpoint = (
-            route.path
-            if route is not None
-            else "unmatched"
-        )
+        endpoint = get_route_template(request)
 
         logger.log(
             level,

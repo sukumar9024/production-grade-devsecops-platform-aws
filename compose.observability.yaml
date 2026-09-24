@@ -1,0 +1,88 @@
+# Local observability, combined with compose.yaml. OpenSearch is local-only.
+services:
+  blackbox:
+    image: prom/blackbox-exporter:v0.27.0
+    restart: unless-stopped
+    volumes: [./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro]
+    command: [--config.file=/etc/blackbox_exporter/config.yml]
+    networks: [monitoring_network, frontend_network]
+    mem_limit: 64m
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=15d]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [monitoring_network]
+    mem_limit: 512m
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Generate local secrets first}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3000:3000"]
+    networks: [monitoring_network]
+    mem_limit: 384m
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    volumes: [./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro, alertmanager_data:/alertmanager]
+    networks: [monitoring_network]
+    mem_limit: 128m
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    restart: unless-stopped
+    command: [--path.rootfs=/host, --collector.textfile.directory=/textfile]
+    pid: host
+    volumes: [/:/host:ro,rslave, ./monitoring/textfile:/textfile:ro]
+    networks: [monitoring_network]
+    mem_limit: 128m
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    restart: unless-stopped
+    command: [--docker_only=true]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks: [monitoring_network]
+    mem_limit: 256m
+  opensearch:
+    image: opensearchproject/opensearch:2.19.3
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes: [opensearch_data:/usr/share/opensearch/data]
+    networks: [monitoring_network]
+    mem_limit: 1536m
+  fluent-bit:
+    image: fluent/fluent-bit:4.0.8
+    restart: unless-stopped
+    volumes:
+      - ./logging/fluent-bit-local.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./logging/parsers.conf:/fluent-bit/etc/parsers-custom.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log/host:ro
+      - fluent_bit_state:/fluent-bit/state
+    networks: [monitoring_network]
+    mem_limit: 128m
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+  opensearch_data:
+  fluent_bit_state:

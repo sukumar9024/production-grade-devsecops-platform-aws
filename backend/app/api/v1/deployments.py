@@ -24,7 +24,6 @@ from app.services.deployment_service import (
     DeploymentService,
 )
 
-
 router = APIRouter(
     prefix="/deployments",
     tags=["Deployments"],
@@ -39,9 +38,7 @@ router = APIRouter(
 def create_deployment(
     payload: DeploymentCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        engineer_or_admin
-    ),
+    _: User = Depends(engineer_or_admin),
 ) -> DeploymentResponse:
     return DeploymentService.create_deployment(
         db=db,
@@ -66,9 +63,7 @@ def list_deployments(
     service_id: uuid.UUID | None = None,
     deployment_status: DeploymentStatus | None = None,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> list[DeploymentResponse]:
     return DeploymentService.list_deployments(
         db=db,
@@ -86,9 +81,7 @@ def list_deployments(
 def get_deployment(
     deployment_id: uuid.UUID,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> DeploymentResponse:
     return DeploymentService.get_deployment(
         db=db,
@@ -104,9 +97,7 @@ def update_deployment(
     deployment_id: uuid.UUID,
     payload: DeploymentUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        engineer_or_admin
-    ),
+    _: User = Depends(engineer_or_admin),
 ) -> DeploymentResponse:
     return DeploymentService.update_deployment(
         db=db,

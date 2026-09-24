@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -10,6 +11,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.enums import DeploymentStatus
+
+if TYPE_CHECKING:
+    from app.models.service import Service
 
 
 class Deployment(
@@ -72,6 +76,6 @@ class Deployment(
         nullable=True,
     )
 
-    service: Mapped["Service"] = relationship(
+    service: Mapped[Service] = relationship(
         back_populates="deployments",
     )

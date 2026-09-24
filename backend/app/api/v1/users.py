@@ -5,8 +5,10 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-)from sqlalchemy.orm import Session
+)
+from sqlalchemy.orm import Session
 
+from app.core.roles import Roles
 from app.db.session import get_db
 from app.dependencies.permissions import admin_only
 from app.models.user import User
@@ -16,7 +18,6 @@ from app.schemas.user import (
     UserStatusUpdate,
 )
 from app.services.user_service import UserService
-from app.core.roles import Roles
 
 router = APIRouter(
     prefix="/users",
@@ -62,10 +63,7 @@ def update_user_role(
     db: Session = Depends(get_db),
     current_admin: User = Depends(admin_only),
 ) -> User:
-    if (
-        user_id == current_admin.id
-        and payload.role != Roles.ADMIN
-    ):
+    if user_id == current_admin.id and payload.role != Roles.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot remove your own Admin role.",
@@ -88,10 +86,7 @@ def update_user_status(
     db: Session = Depends(get_db),
     current_admin: User = Depends(admin_only),
 ) -> User:
-    if (
-        user_id == current_admin.id
-        and payload.status.value == "disabled"
-    ):
+    if user_id == current_admin.id and payload.status.value == "disabled":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot disable your own account.",

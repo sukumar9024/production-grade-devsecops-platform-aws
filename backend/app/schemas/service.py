@@ -7,6 +7,8 @@ from app.models.enums import Environment, ServiceStatus
 
 
 class ServiceCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     project_id: uuid.UUID
 
     name: str = Field(
@@ -25,6 +27,8 @@ class ServiceCreate(BaseModel):
 
 
 class ServiceUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     name: str | None = Field(
         default=None,
         min_length=2,

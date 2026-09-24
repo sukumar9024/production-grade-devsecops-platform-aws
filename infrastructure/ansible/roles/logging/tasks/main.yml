@@ -1,0 +1,26 @@
+---
+- name: Install centralized logging configuration
+  ansible.builtin.copy:
+    src: "{{ repository_root }}/logging/"
+    dest: "{{ secureops_root }}/logging/"
+    owner: root
+    group: root
+    mode: preserve
+    directory_mode: '0755'
+- name: Bound system journal retention
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: '0755'
+- name: Configure journal retention
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/secureops.conf
+    content: "[Journal]\nSystemMaxUse=500M\nMaxRetentionSec=14day\n"
+    mode: '0644'
+  notify: Restart journal
+
+- name: Persist system events to files consumed by Fluent Bit
+  ansible.builtin.service:
+    name: rsyslog
+    state: started
+    enabled: true

@@ -24,7 +24,6 @@ from app.services.project_service import (
     ProjectService,
 )
 
-
 router = APIRouter(
     prefix="/projects",
     tags=["Projects"],
@@ -39,9 +38,7 @@ router = APIRouter(
 def create_project(
     payload: ProjectCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        engineer_or_admin
-    ),
+    current_user: User = Depends(engineer_or_admin),
 ) -> ProjectResponse:
     return ProjectService.create_project(
         db=db,
@@ -65,9 +62,7 @@ def list_projects(
         le=100,
     ),
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> list[ProjectResponse]:
     return ProjectService.list_projects(
         db=db,
@@ -83,9 +78,7 @@ def list_projects(
 def get_project(
     project_id: uuid.UUID,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        authenticated_user
-    ),
+    _: User = Depends(authenticated_user),
 ) -> ProjectResponse:
     return ProjectService.get_project(
         db=db,
@@ -101,9 +94,7 @@ def update_project(
     project_id: uuid.UUID,
     payload: ProjectUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        engineer_or_admin
-    ),
+    _: User = Depends(engineer_or_admin),
 ) -> ProjectResponse:
     return ProjectService.update_project(
         db=db,
@@ -119,9 +110,7 @@ def update_project(
 def delete_project(
     project_id: uuid.UUID,
     db: Session = Depends(get_db),
-    _: User = Depends(
-        admin_only
-    ),
+    _: User = Depends(admin_only),
 ) -> None:
     ProjectService.delete_project(
         db=db,

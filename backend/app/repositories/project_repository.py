@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.project import Project
+from app.repositories.audit_log_repository import AuditLogRepository
 
 
 class ProjectRepository:
@@ -14,12 +15,8 @@ class ProjectRepository:
     ) -> Project | None:
         statement = (
             select(Project)
-            .options(
-                joinedload(Project.created_by)
-            )
-            .where(
-                Project.id == project_id
-            )
+            .options(joinedload(Project.created_by))
+            .where(Project.id == project_id)
         )
 
         return db.scalar(statement)
@@ -29,10 +26,7 @@ class ProjectRepository:
         db: Session,
         name: str,
     ) -> Project | None:
-        statement = select(Project).where(
-            func.lower(Project.name)
-            == name.lower()
-        )
+        statement = select(Project).where(func.lower(Project.name) == name.lower())
 
         return db.scalar(statement)
 
@@ -44,19 +38,13 @@ class ProjectRepository:
     ) -> list[Project]:
         statement = (
             select(Project)
-            .options(
-                joinedload(Project.created_by)
-            )
-            .order_by(
-                Project.created_at.desc()
-            )
+            .options(joinedload(Project.created_by))
+            .order_by(Project.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
 
-        return list(
-            db.scalars(statement).all()
-        )
+        return list(db.scalars(statement).all())
 
     @staticmethod
     def create(
@@ -64,6 +52,8 @@ class ProjectRepository:
         project: Project,
     ) -> Project:
         db.add(project)
+        db.flush()
+        AuditLogRepository.stage(db, "project.created", "project", project.id)
         db.commit()
         db.refresh(project)
 
@@ -75,6 +65,8 @@ class ProjectRepository:
         project: Project,
     ) -> Project:
         db.add(project)
+        db.flush()
+        AuditLogRepository.stage(db, "project.updated", "project", project.id)
         db.commit()
         db.refresh(project)
 
@@ -86,4 +78,6 @@ class ProjectRepository:
         project: Project,
     ) -> None:
         db.delete(project)
+        db.flush()
+        AuditLogRepository.stage(db, "project.deleted", "project", project.id)
         db.commit()

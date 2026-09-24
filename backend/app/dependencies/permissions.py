@@ -6,11 +6,7 @@ from app.models.user import User
 
 
 def admin_only(
-    current_user: User = Depends(
-        require_roles(
-            Roles.ADMIN
-        )
-    ),
+    current_user: User = Depends(require_roles(Roles.ADMIN)),
 ) -> User:
     return current_user
 

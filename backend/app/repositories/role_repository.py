@@ -10,9 +10,7 @@ class RoleRepository:
         db: Session,
         name: str,
     ) -> Role | None:
-        statement = select(Role).where(
-            Role.name == name
-        )
+        statement = select(Role).where(Role.name == name)
 
         return db.scalar(statement)
 
@@ -20,11 +18,6 @@ class RoleRepository:
     def get_all(
         db: Session,
     ) -> list[Role]:
-        statement = (
-            select(Role)
-            .order_by(Role.name)
-        )
+        statement = select(Role).order_by(Role.name)
 
-        return list(
-            db.scalars(statement).all()
-        )
+        return list(db.scalars(statement).all())

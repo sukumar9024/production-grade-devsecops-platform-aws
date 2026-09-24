@@ -23,37 +23,26 @@ class ProjectService:
     ) -> Project:
         normalized_name = payload.name.strip()
 
-        existing_project = (
-            ProjectRepository.get_by_name(
-                db=db,
-                name=normalized_name,
-            )
+        existing_project = ProjectRepository.get_by_name(
+            db=db,
+            name=normalized_name,
         )
 
         if existing_project is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "A project with this name "
-                    "already exists."
-                ),
+                detail=("A project with this name already exists."),
             )
 
         project = Project(
             name=normalized_name,
-            description=(
-                payload.description.strip()
-                if payload.description
-                else None
-            ),
+            description=(payload.description.strip() if payload.description else None),
             created_by_id=current_user.id,
         )
 
-        created_project = (
-            ProjectRepository.create(
-                db=db,
-                project=project,
-            )
+        created_project = ProjectRepository.create(
+            db=db,
+            project=project,
         )
 
         return ProjectRepository.get_by_id(
@@ -103,37 +92,23 @@ class ProjectService:
         )
 
         if payload.name is not None:
-            normalized_name = (
-                payload.name.strip()
+            normalized_name = payload.name.strip()
+
+            existing_project = ProjectRepository.get_by_name(
+                db=db,
+                name=normalized_name,
             )
 
-            existing_project = (
-                ProjectRepository.get_by_name(
-                    db=db,
-                    name=normalized_name,
-                )
-            )
-
-            if (
-                existing_project is not None
-                and existing_project.id
-                != project.id
-            ):
+            if existing_project is not None and existing_project.id != project.id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=(
-                        "A project with this name "
-                        "already exists."
-                    ),
+                    detail=("A project with this name already exists."),
                 )
 
             project.name = normalized_name
 
         if payload.description is not None:
-            project.description = (
-                payload.description.strip()
-                or None
-            )
+            project.description = payload.description.strip() or None
 
         ProjectRepository.save(
             db=db,

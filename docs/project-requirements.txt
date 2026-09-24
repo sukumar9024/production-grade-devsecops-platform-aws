@@ -1,0 +1,1456 @@
+Project 1 — Production-Grade DevSecOps Platform on AWS
+1. Project Objective
+Build and operate a production-style web application platform on AWS with:
+secure application architecture
+production-ready Docker images
+Infrastructure as Code using Terraform
+server configuration using Ansible
+CI/CD using Jenkins
+vulnerability and security scanning
+private networking
+managed database
+secrets management
+HTTPS
+centralized monitoring and logging
+deployment verification
+rollback
+backup and restore validation
+production runbooks and documentation
+Final architecture
+Developer
+   |
+   v
+Git Repository
+   |
+   v
+Jenkins
+   |
+   +--> Unit Tests
+   +--> Semgrep
+   +--> Dependency Scan
+   +--> Terraform Validation
+   +--> IaC Scan
+   +--> Docker Build
+   +--> Trivy
+   |
+   v
+Amazon ECR
+   |
+   v
+AWS Production Environment
+   |
+   +-------------------------------+
+   |                               |
+   v                               v
+Application Load Balancer      Monitoring
+   |                               |
+   v                               +--> Prometheus
+Application Servers                +--> Grafana
+   |                               +--> Alertmanager
+   |
+   +--> Frontend
+   +--> Backend API
+   |
+   +--> Redis
+   |
+   +--> RDS PostgreSQL
+   |
+   +--> S3
+   |
+   +--> Centralized Logs
+
+PHASE 0 — Project Planning
+0.1 Define scope
+Status: [ ]
+Decide that the platform will contain:
+React frontend
+FastAPI backend
+PostgreSQL
+Redis
+Nginx
+Docker
+AWS
+Terraform
+Ansible
+Jenkins
+Prometheus
+Grafana
+Fluent Bit
+centralized logging
+Semgrep
+Trivy
+OWASP ZAP
+
+0.2 Define environments
+Status: [ ]
+Use four environments:
+local
+dev
+staging
+production
+Purpose:
+local
+Developer testing
+
+dev
+Integration environment
+
+staging
+Production-like testing
+
+production
+Public production environment
+
+0.3 Define Git branching strategy
+Status: [ ]
+Recommended:
+main
+develop
+feature/*
+release/*
+hotfix/*
+Flow:
+feature
+   ↓
+develop
+   ↓
+release
+   ↓
+main
+Production deployments should come from:
+main
+
+0.4 Create project repository
+Status: [ ]
+Recommended structure:
+production-devsecops-platform/
+│
+├── frontend/
+│
+├── backend/
+│
+├── infrastructure/
+│   ├── terraform/
+│   └── ansible/
+│
+├── docker/
+│
+├── monitoring/
+│
+├── logging/
+│
+├── security/
+│
+├── pipelines/
+│
+├── scripts/
+│
+├── tests/
+│
+├── docs/
+│
+├── diagrams/
+│
+├── compose.yaml
+├── compose.dev.yaml
+├── compose.prod.yaml
+├── Makefile
+└── README.md
+
+PHASE 1 — Application Design
+1.1 Define application
+Status: [ ]
+Build a small but realistic application.
+Suggested application:
+SecureOps Portal
+Purpose:
+A portal to manage deployed services, deployment status, service health, incidents and audit activity.
+
+1.2 Define application features
+Status: [ ]
+Implement:
+user registration
+login
+logout
+JWT authentication
+refresh tokens
+role-based authorization
+users
+projects
+services
+deployments
+service status
+incident history
+audit logs
+
+1.3 Define user roles
+Status: [ ]
+Example:
+Admin
+Engineer
+Viewer
+Admin:
+Manage users
+Manage services
+View incidents
+View deployments
+Engineer:
+View services
+Trigger allowed operations
+View deployments
+View incidents
+Viewer:
+Read-only access
+
+PHASE 2 — Backend Development
+2.1 Create FastAPI application
+Status: [ ]
+Structure:
+backend/
+├── app/
+│   ├── api/
+│   ├── core/
+│   ├── models/
+│   ├── schemas/
+│   ├── repositories/
+│   ├── services/
+│   ├── middleware/
+│   ├── dependencies/
+│   └── main.py
+│
+├── migrations/
+├── tests/
+├── scripts/
+├── requirements.txt
+└── Dockerfile
+
+2.2 Configure application settings
+Status: [ ]
+Configuration should come from environment variables.
+Example:
+DATABASE_URL
+REDIS_URL
+JWT_SECRET
+JWT_EXPIRATION
+ENVIRONMENT
+LOG_LEVEL
+AWS_REGION
+S3_BUCKET
+No secrets inside source code.
+
+2.3 Implement database models
+Status: [ ]
+Tables:
+users
+roles
+projects
+services
+deployments
+incidents
+audit_logs
+
+2.4 Add database migrations
+Status: [ ]
+Use:
+Alembic
+Required commands:
+upgrade
+downgrade
+migration creation
+
+2.5 Implement authentication
+Status: [ ]
+Implement:
+password hashing
+JWT access token
+refresh token
+token expiry
+protected endpoints
+role validation
+
+2.6 Implement API versioning
+Status: [ ]
+Use:
+/api/v1/
+Example:
+/api/v1/auth/login
+/api/v1/projects
+/api/v1/services
+/api/v1/deployments
+/api/v1/incidents
+
+2.7 Add health endpoints
+Status: [ ]
+Implement:
+/health/live
+/health/ready
+/health/live
+Should only confirm that the application process is alive.
+/health/ready
+Should validate:
+PostgreSQL
+Redis
+required dependencies
+
+2.8 Add application metrics
+Status: [ ]
+Expose:
+/metrics
+Metrics:
+http_requests_total
+http_request_duration_seconds
+http_errors_total
+database_query_duration_seconds
+login_failures_total
+
+2.9 Implement structured logging
+Status: [ ]
+Use JSON logs.
+Example:
+{
+  "timestamp": "2026-09-19T10:30:00Z",
+  "level": "INFO",
+  "service": "backend",
+  "environment": "production",
+  "request_id": "abc123",
+  "method": "GET",
+  "endpoint": "/api/v1/services",
+  "status_code": 200
+}
+
+2.10 Add request correlation ID
+Status: [ ]
+Every HTTP request should have:
+X-Request-ID
+If absent:
+generate UUID
+Include it in:
+logs
+error responses
+downstream calls
+
+2.11 Add backend tests
+Status: [ ]
+Implement:
+unit tests
+API tests
+authentication tests
+database tests
+permission tests
+health endpoint tests
+
+PHASE 3 — Frontend Development
+3.1 Create React TypeScript application
+Status: [ ]
+Structure:
+frontend/
+├── src/
+│   ├── api/
+│   ├── components/
+│   ├── layouts/
+│   ├── pages/
+│   ├── hooks/
+│   ├── services/
+│   ├── types/
+│   └── utils/
+│
+├── public/
+├── nginx/
+└── Dockerfile
+
+3.2 Create authentication UI
+Status: [ ]
+Pages:
+Login
+Logout
+Unauthorized
+
+3.3 Create dashboard
+Status: [ ]
+Display:
+number of services
+healthy services
+failed services
+recent deployments
+open incidents
+
+3.4 Create service page
+Status: [ ]
+Show:
+Service name
+Environment
+Version
+Status
+Last deployment
+Health status
+
+3.5 Create deployment page
+Status: [ ]
+Show:
+Deployment ID
+Application version
+Git commit
+Environment
+Deployment time
+Status
+
+3.6 Create incident page
+Status: [ ]
+Show:
+Incident ID
+Severity
+Service
+Timestamp
+Status
+Description
+
+3.7 Handle API errors
+Status: [ ]
+Proper handling for:
+401
+403
+404
+422
+500
+503
+
+PHASE 4 — Production Docker Images
+4.1 Backend Dockerfile
+Status: [ ]
+Requirements:
+pinned Python base image
+multi-stage build
+dependencies built separately
+non-root user
+minimal runtime image
+health check
+production process manager
+no development server
+Production server:
+Gunicorn
++
+Uvicorn workers
+
+4.2 Frontend Dockerfile
+Status: [ ]
+Use:
+Node builder
+   ↓
+npm ci
+   ↓
+npm run build
+   ↓
+Nginx runtime
+Do not run:
+npm start
+in production.
+
+4.3 Create .dockerignore
+Status: [ ]
+Exclude:
+.git
+.env
+node_modules
+__pycache__
+tests
+coverage
+IDE files
+logs
+
+4.4 Run containers as non-root
+Status: [ ]
+Backend must use dedicated user.
+Example:
+appuser
+
+4.5 Add container health checks
+Status: [ ]
+Backend:
+/health/live
+Frontend:
+/
+
+4.6 Configure resource limits
+Status: [ ]
+Set:
+CPU limits
+memory limits
+reservations
+
+4.7 Configure restart policies
+Status: [ ]
+Use:
+restart: unless-stopped
+or equivalent.
+
+PHASE 5 — Local Production-Like Stack
+5.1 Create base Compose file
+Status: [ ]
+Services:
+frontend
+backend
+postgres
+redis
+nginx
+prometheus
+grafana
+fluent-bit
+node-exporter
+cadvisor
+
+5.2 Create separate networks
+Status: [ ]
+Example:
+frontend_network
+backend_network
+monitoring_network
+
+5.3 Restrict database exposure
+Status: [ ]
+Do not expose:
+5432
+to the host unless needed locally.
+Backend should connect through the internal Docker network.
+
+5.4 Restrict Redis
+Status: [ ]
+Redis should not be accessible publicly.
+
+5.5 Configure persistent volumes
+Status: [ ]
+Volumes:
+postgres_data
+redis_data
+grafana_data
+prometheus_data
+
+PHASE 6 — Terraform Foundation
+6.1 Create Terraform structure
+Status: [ ]
+terraform/
+├── modules/
+│   ├── vpc/
+│   ├── security-groups/
+│   ├── compute/
+│   ├── alb/
+│   ├── rds/
+│   ├── redis/
+│   ├── ecr/
+│   ├── s3/
+│   ├── iam/
+│   └── monitoring/
+│
+└── environments/
+    ├── dev/
+    ├── staging/
+    └── prod/
+
+6.2 Pin Terraform version
+Status: [ ]
+Also pin provider versions.
+
+6.3 Configure remote state
+Status: [ ]
+Use:
+S3
+with state locking where supported/configured.
+
+6.4 Enable state encryption
+Status: [ ]
+Terraform state must be encrypted.
+
+PHASE 7 — AWS Network Architecture
+7.1 Create VPC
+Status: [ ]
+Example:
+10.20.0.0/16
+
+7.2 Create public subnets
+Status: [ ]
+Example:
+10.20.1.0/24
+10.20.2.0/24
+Across two availability zones.
+
+7.3 Create private application subnets
+Status: [ ]
+10.20.11.0/24
+10.20.12.0/24
+
+7.4 Create private database subnets
+Status: [ ]
+10.20.21.0/24
+10.20.22.0/24
+
+7.5 Create Internet Gateway
+Status: [ ]
+Attach to VPC.
+
+7.6 Create NAT Gateway
+Status: [ ]
+Allow private application instances outbound Internet access without exposing them directly.
+
+7.7 Configure route tables
+Status: [ ]
+Public route:
+0.0.0.0/0
+→ Internet Gateway
+Private application:
+0.0.0.0/0
+→ NAT Gateway
+Database subnet:
+No direct Internet route unless specifically justified.
+
+PHASE 8 — Security Groups
+8.1 ALB security group
+Status: [ ]
+Inbound:
+80
+443
+from Internet.
+
+8.2 Application security group
+Status: [ ]
+Allow application port only from:
+ALB security group
+
+8.3 Database security group
+Status: [ ]
+Allow:
+5432
+only from application security group.
+
+8.4 Redis security group
+Status: [ ]
+Allow:
+6379
+only from application servers.
+
+8.5 SSH strategy
+Status: [ ]
+Prefer:
+AWS Systems Manager Session Manager
+instead of public SSH.
+If SSH is temporarily required, restrict the source IP.
+
+PHASE 9 — Compute Layer
+9.1 Create application EC2 instances
+Status: [ ]
+Deploy instances inside:
+private application subnet
+No public IP.
+
+9.2 Configure IAM instance role
+Status: [ ]
+Permissions only for required resources:
+ECR pull
+Secrets Manager read
+CloudWatch
+S3 access if required
+Follow least privilege.
+
+PHASE 10 — Ansible Configuration
+10.1 Create Ansible structure
+Status: [ ]
+ansible/
+├── inventories/
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
+│
+├── roles/
+│   ├── base/
+│   ├── docker/
+│   ├── app/
+│   ├── monitoring/
+│   ├── logging/
+│   └── hardening/
+│
+└── playbooks/
+
+10.2 Create base role
+Status: [ ]
+Configure:
+packages
+timezone
+users
+filesystem
+required directories
+system limits
+
+10.3 Create Docker role
+Status: [ ]
+Install:
+Docker Engine
+Compose plugin
+Configure Docker logging and daemon settings.
+
+10.4 Create hardening role
+Status: [ ]
+Implement:
+unnecessary service removal
+firewall configuration
+SSH hardening if SSH exists
+permissions
+package updates
+
+PHASE 11 — Database
+11.1 Create RDS PostgreSQL
+Status: [ ]
+Use:
+Amazon RDS PostgreSQL
+
+11.2 Disable public access
+Status: [ ]
+Set:
+Publicly accessible = false
+
+11.3 Enable encryption
+Status: [ ]
+Enable storage encryption.
+
+11.4 Configure automated backups
+Status: [ ]
+Set backup retention.
+
+11.5 Configure maintenance window
+Status: [ ]
+Define a planned maintenance period.
+
+11.6 Test database restoration
+Status: [ ]
+This is critical.
+Do not mark backup implementation complete until you have restored a backup successfully.
+Record:
+Backup time
+Restore start
+Restore completion
+Validation result
+
+PHASE 12 — Redis
+12.1 Decide Redis architecture
+Status: [ ]
+Production preference:
+Amazon ElastiCache
+Alternative for cost-controlled project:
+Redis on private compute.
+
+12.2 Enable authentication
+Status: [ ]
+Do not leave Redis unauthenticated.
+
+PHASE 13 — Container Registry
+13.1 Create Amazon ECR repositories
+Status: [ ]
+Example:
+secureops-frontend
+secureops-backend
+
+13.2 Enable image scanning
+Status: [ ]
+Configure vulnerability scanning.
+
+13.3 Configure lifecycle policy
+Status: [ ]
+Automatically remove old unused images while retaining rollback versions.
+
+PHASE 14 — Secrets Management
+14.1 Create Secrets Manager secrets
+Status: [ ]
+Store:
+database credentials
+JWT secret
+Redis credentials
+external API keys
+webhooks
+
+14.2 Implement secret retrieval
+Status: [ ]
+Application/deployment scripts should retrieve secrets at runtime.
+
+14.3 Remove secrets from repository
+Status: [ ]
+Check entire Git history.
+Use secret scanning.
+
+PHASE 15 — Domain and TLS
+15.1 Configure Route53
+Status: [ ]
+Example:
+secureops.example.com
+
+15.2 Request ACM certificate
+Status: [ ]
+Use AWS Certificate Manager.
+
+15.3 Attach certificate to ALB
+Status: [ ]
+Terminate HTTPS at ALB.
+
+15.4 Redirect HTTP to HTTPS
+Status: [ ]
+HTTP 80
+→ HTTPS 443
+
+PHASE 16 — Application Load Balancer
+16.1 Create ALB
+Status: [ ]
+Deploy in public subnets.
+
+16.2 Create target group
+Status: [ ]
+Application servers should be targets.
+
+16.3 Configure health check
+Status: [ ]
+Target:
+/health/ready
+
+16.4 Configure deregistration delay
+Status: [ ]
+Prevent dropping active requests during deployments.
+
+PHASE 17 — Jenkins Platform
+17.1 Deploy Jenkins
+Status: [ ]
+Jenkins itself should be treated as infrastructure.
+Prefer a dedicated instance or existing secure Jenkins host.
+
+17.2 Configure Jenkins credentials
+Status: [ ]
+Store:
+AWS credentials/role configuration
+registry configuration
+deployment credentials
+API tokens
+Never in Jenkinsfile.
+
+17.3 Create pipeline structure
+Status: [ ]
+Checkout
+   ↓
+Lint
+   ↓
+Unit Tests
+   ↓
+SAST
+   ↓
+Dependency Scan
+   ↓
+IaC Validation
+   ↓
+Docker Build
+   ↓
+Container Scan
+   ↓
+Push ECR
+   ↓
+Deploy Staging
+   ↓
+Integration Tests
+   ↓
+DAST
+   ↓
+Approval
+   ↓
+Production Deploy
+   ↓
+Smoke Test
+   ↓
+Verification
+
+PHASE 18 — Static Security Testing
+18.1 Add Semgrep
+Status: [ ]
+Scan:
+Python
+JavaScript/TypeScript
+insecure coding patterns
+
+18.2 Set failure criteria
+Status: [ ]
+Example:
+Critical
+→ fail
+
+High
+→ fail
+
+Medium
+→ report/review
+
+PHASE 19 — Dependency Security
+19.1 Scan Python dependencies
+Status: [ ]
+Use an appropriate dependency vulnerability scanner.
+
+19.2 Scan npm dependencies
+Status: [ ]
+Check known vulnerable packages.
+
+PHASE 20 — IaC Security
+20.1 Scan Terraform
+Status: [ ]
+Use:
+Trivy
+or
+Checkov
+Check for:
+public databases
+unrestricted security groups
+missing encryption
+excessive IAM permissions
+insecure storage
+
+PHASE 21 — Container Security
+21.1 Scan images using Trivy
+Status: [ ]
+Scan frontend and backend.
+
+21.2 Define security gate
+Status: [ ]
+Do not deploy images with unacceptable severity findings.
+
+21.3 Generate scan artifacts
+Status: [ ]
+Preserve scan reports in Jenkins.
+
+PHASE 22 — Deployment
+22.1 Pull immutable image
+Status: [ ]
+Use:
+backend:<git-sha>
+Not:
+backend:latest
+
+22.2 Record release metadata
+Status: [ ]
+Store:
+Git commit
+Image digest
+Version
+Deployment timestamp
+Environment
+Pipeline ID
+
+22.3 Run database migration
+Status: [ ]
+Migration should happen through controlled deployment logic.
+
+22.4 Deploy containers
+Status: [ ]
+Start new version.
+
+PHASE 23 — Production Deployment Strategy
+23.1 Implement simple blue/green behavior
+Status: [ ]
+Example:
+backend-blue
+backend-green
+Flow:
+Current:
+blue
+
+Deploy:
+green
+
+Verify green
+
+Switch traffic
+
+Keep blue temporarily
+
+23.2 Run smoke tests
+Status: [ ]
+Test:
+/
+health endpoint
+login
+critical API
+database access
+
+PHASE 24 — Automated Rollback
+24.1 Define failure criteria
+Status: [ ]
+Rollback if:
+health endpoint fails
+container crashes
+smoke test fails
+ALB target becomes unhealthy
+
+24.2 Store previous release
+Status: [ ]
+Track:
+current_version
+previous_version
+
+24.3 Implement rollback procedure
+Status: [ ]
+New deployment fails
+       ↓
+Stop new version
+       ↓
+Restore previous image
+       ↓
+Run health check
+       ↓
+Validate
+       ↓
+Alert
+
+PHASE 25 — DAST
+25.1 Deploy OWASP ZAP
+Status: [ ]
+Run against staging first.
+
+25.2 Scan authentication endpoints
+Status: [ ]
+
+25.3 Scan API endpoints
+Status: [ ]
+
+25.4 Generate ZAP report
+Status: [ ]
+Store as CI artifact.
+
+PHASE 26 — Metrics
+26.1 Deploy Prometheus
+Status: [ ]
+
+26.2 Deploy node_exporter
+Status: [ ]
+Metrics:
+CPU
+memory
+filesystem
+network
+load
+
+26.3 Deploy cAdvisor
+Status: [ ]
+Monitor:
+container CPU
+container memory
+container network
+container restarts
+
+26.4 Scrape application metrics
+Status: [ ]
+Use backend /metrics.
+
+PHASE 27 — Grafana
+27.1 Create infrastructure dashboard
+Status: [ ]
+Include:
+CPU
+memory
+disk
+network
+
+27.2 Create application dashboard
+Status: [ ]
+Include:
+requests/sec
+latency
+4xx
+5xx
+error rate
+request count
+
+27.3 Create deployment dashboard
+Status: [ ]
+Display:
+current version
+deployment timestamp
+deployment status
+
+PHASE 28 — Alerting
+28.1 Configure Alertmanager
+Status: [ ]
+
+28.2 Create availability alert
+Status: [ ]
+Example:
+service unavailable
+
+28.3 Create CPU alert
+Status: [ ]
+
+28.4 Create memory alert
+Status: [ ]
+
+28.5 Create disk alert
+Status: [ ]
+
+28.6 Create API error alert
+Status: [ ]
+Example:
+5xx rate above threshold
+
+28.7 Configure notification channel
+Status: [ ]
+Use:
+Discord
+or
+Slack
+or
+Email
+
+PHASE 29 — Centralized Logging
+29.1 Deploy Fluent Bit
+Status: [ ]
+Collect:
+Docker logs
+Nginx logs
+system logs
+application logs
+
+29.2 Deploy log storage
+Status: [ ]
+Use:
+OpenSearch
+or:
+Elasticsearch
+
+29.3 Create log retention policy
+Status: [ ]
+Do not retain logs indefinitely.
+
+29.4 Build log dashboards
+Status: [ ]
+View:
+errors
+requests
+authentication failures
+deployment-related events
+
+PHASE 30 — Nginx and Security Headers
+30.1 Configure Nginx
+Status: [ ]
+Responsibilities:
+reverse proxy
+frontend serving if appropriate
+backend proxy
+request limits
+proxy headers
+
+30.2 Configure security headers
+Status: [ ]
+Consider:
+X-Content-Type-Options
+X-Frame-Options
+Referrer-Policy
+Content-Security-Policy
+Strict-Transport-Security
+
+PHASE 31 — Rate Limiting
+31.1 Protect authentication endpoints
+Status: [ ]
+Apply limits to:
+/login
+/token
+/password reset
+
+PHASE 32 — Backups
+32.1 RDS automated backup
+Status: [ ]
+
+32.2 Manual production snapshot procedure
+Status: [ ]
+
+32.3 S3 backup policy
+Status: [ ]
+If application data exists in S3.
+
+32.4 Restore drill
+Status: [ ]
+Actually restore data into a temporary environment.
+
+PHASE 33 — Disaster Recovery
+33.1 Document RPO
+Status: [ ]
+Example:
+RPO:
+24 hours
+
+33.2 Document RTO
+Status: [ ]
+Example:
+RTO:
+2 hours
+Choose values appropriate for the project rather than claiming unrealistic enterprise guarantees.
+
+33.3 Create recovery procedure
+Status: [ ]
+Procedure should include:
+Terraform apply
+        ↓
+Ansible configuration
+        ↓
+Restore RDS
+        ↓
+Deploy application
+        ↓
+Restore supporting data
+        ↓
+Verify
+
+PHASE 34 — Security Hardening
+34.1 Remove unnecessary ports
+Status: [ ]
+
+34.2 Verify containers run non-root
+Status: [ ]
+
+34.3 Restrict IAM permissions
+Status: [ ]
+
+34.4 Review Security Groups
+Status: [ ]
+
+34.5 Enable encryption at rest
+Status: [ ]
+For:
+RDS
+EBS
+S3
+secrets
+
+34.6 Enable encryption in transit
+Status: [ ]
+Use TLS where required.
+
+PHASE 35 — Operational Documentation
+35.1 Architecture document
+Status: [ ]
+Include:
+AWS architecture
+network architecture
+CI/CD architecture
+observability architecture
+
+35.2 Deployment runbook
+Status: [ ]
+Explain:
+How to deploy
+How to validate
+How to rollback
+
+35.3 Incident runbook
+Status: [ ]
+Example:
+Application unavailable
+Database unavailable
+Disk full
+High CPU
+Deployment failure
+
+35.4 Backup runbook
+Status: [ ]
+
+35.5 Restore runbook
+Status: [ ]
+
+PHASE 36 — Production Testing
+36.1 Test container crash
+Status: [ ]
+Verify monitoring detects it.
+
+36.2 Test backend outage
+Status: [ ]
+
+36.3 Test database outage
+Status: [ ]
+
+36.4 Test high CPU
+Status: [ ]
+
+36.5 Test high disk usage
+Status: [ ]
+
+36.6 Test failed deployment
+Status: [ ]
+Rollback must work.
+
+36.7 Test expired/invalid secrets
+Status: [ ]
+
+36.8 Test database restore
+Status: [ ]
+
+PHASE 37 — Final Security Review
+Status: [ ]
+Run the full chain:
+Semgrep
+Trivy filesystem
+Trivy image
+Terraform/IaC scan
+dependency scan
+OWASP ZAP
+Record the findings and remediation.
+
+PHASE 38 — Final Production Validation
+Status: [ ]
+Verify:
+Domain works
+
+HTTPS works
+
+HTTP redirects to HTTPS
+
+Frontend works
+
+Backend works
+
+Authentication works
+
+RDS private
+
+Redis private
+
+Application servers private
+
+Secrets not in Git
+
+Monitoring works
+
+Logging works
+
+Alerts work
+
+Rollback works
+
+Backups work
+
+Restore works
+
+PHASE 39 — GitHub Presentation
+39.1 README
+Status: [ ]
+README should contain:
+Problem statement
+
+Architecture
+
+Technology stack
+
+Repository structure
+
+Deployment process
+
+CI/CD process
+
+Security architecture
+
+Monitoring
+
+Logging
+
+Backup
+
+Disaster recovery
+
+Screenshots
+
+Future improvements
+
+39.2 Architecture diagrams
+Status: [ ]
+Create at least:
+01-aws-architecture.png
+02-network-architecture.png
+03-cicd-pipeline.png
+04-observability.png
+05-security-flow.png
+
+39.3 Screenshots
+Status: [ ]
+Capture:
+application
+Jenkins pipeline
+Terraform deployment
+Grafana
+logs
+Semgrep
+Trivy
+ZAP
+AWS infrastructure
+
+PHASE 40 — Resume-Ready Completion Criteria
+Do not call Project 1 complete until you can demonstrate all of this:
+[ ] Public HTTPS application
+[ ] Proper AWS VPC design
+[ ] Public/private subnets
+[ ] Private database
+[ ] Infrastructure completely reproducible with Terraform
+[ ] Server configuration automated
+[ ] Production Dockerfiles
+[ ] CI/CD
+[ ] SAST
+[ ] dependency scanning
+[ ] container scanning
+[ ] IaC scanning
+[ ] DAST
+[ ] immutable image versions
+[ ] staging environment
+[ ] production environment
+[ ] deployment validation
+[ ] rollback
+[ ] secrets management
+[ ] metrics
+[ ] dashboards
+[ ] alerts
+[ ] centralized logs
+[ ] database backups
+[ ] tested database restore
+[ ] documented disaster recovery
+[ ] production runbook
+[ ] architecture diagrams
+[ ] detailed GitHub README
+Recommended execution order
+You should execute it in this exact sequence:
+01. Repository structure
+02. Backend
+03. Frontend
+04. Database models
+05. Authentication
+06. Application tests
+07. Production Dockerfiles
+08. Local Compose
+09. Terraform modules
+10. AWS networking
+11. Security Groups
+12. EC2/application compute
+13. RDS
+14. Redis
+15. ECR
+16. Secrets Manager
+17. Ansible
+18. Manual production deployment
+19. Domain
+20. HTTPS
+21. ALB
+22. Jenkins
+23. Semgrep
+24. dependency scan
+25. IaC scanning
+26. Docker scanning
+27. automated staging deployment
+28. OWASP ZAP
+29. production approval
+30. production deployment
+31. smoke testing
+32. automated rollback
+33. Prometheus
+34. Grafana
+35. Alertmanager
+36. centralized logging
+37. backups
+38. restore testing
+39. DR testing
+40. security hardening
+41. failure testing
+42. documentation
+43. architecture diagrams
+44. final production validation
+45. resume + GitHub presentation
