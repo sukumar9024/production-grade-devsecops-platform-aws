@@ -1,12 +1,18 @@
-FROM python:3.14.6-slim-bookworm@sha256:4c92ffcde4dd6f1ff72a24518f49fd4990b27134987dfa31a733badde66df9f8 AS builder
+FROM python:3.14.7-alpine3.23@sha256:218761489de417a6eb0808e264cbdd7043ec6659fe5a61898815e9848536541d AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 WORKDIR /build
 COPY requirements.txt .
-RUN python -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --only-binary=:all: -r requirements.txt \
+    && /opt/venv/bin/python -m pip uninstall -y pip
 
-FROM python:3.14.6-slim-bookworm@sha256:4c92ffcde4dd6f1ff72a24518f49fd4990b27134987dfa31a733badde66df9f8 AS runtime
+FROM python:3.14.7-alpine3.23@sha256:218761489de417a6eb0808e264cbdd7043ec6659fe5a61898815e9848536541d AS runtime
+RUN apk upgrade --no-cache \
+    && python -m pip uninstall -y pip \
+    && rm -rf /usr/local/lib/python3.14/ensurepip \
+    && addgroup -g 10001 appuser \
+    && adduser -D -H -u 10001 -G appuser appuser
 ENV PATH="/opt/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-RUN groupadd --gid 10001 appuser && useradd --uid 10001 --gid appuser --no-create-home appuser
 WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 COPY --chown=appuser:appuser app ./app

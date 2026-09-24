@@ -1,0 +1,97 @@
+name: Security
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Source and dependency security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.15.0'
+      - name: Install audit dependencies
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements-dev.txt
+          cd frontend && npm ci --ignore-scripts
+      - name: Audit runtime dependencies
+        run: bash scripts/security-scan.sh dependencies
+      - name: Scan full Git history for secrets
+        if: ${{ !cancelled() }}
+        run: bash scripts/security-scan.sh history
+      - name: Run strict static security analysis
+        if: ${{ !cancelled() }}
+        run: bash scripts/security-scan.sh sast
+      - name: Scan filesystem dependencies and secrets
+        if: ${{ !cancelled() }}
+        run: bash scripts/security-scan.sh filesystem
+      - name: Scan Terraform security configuration
+        if: ${{ !cancelled() }}
+        run: >-
+          docker run --rm -v "$PWD:/src" -w /src aquasec/trivy:0.74.0
+          config --severity HIGH,CRITICAL --exit-code 1
+          --format json --output reports/trivy-iac.json infrastructure/terraform
+      - name: Save security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-security-reports
+          path: reports/*.json
+          if-no-files-found: warn
+
+  containers:
+    name: Container security and runtime smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build release images
+        id: build
+        run: |
+          docker build --platform linux/amd64 -t "secureops-backend:$IMAGE_TAG" backend
+          docker build --platform linux/amd64 -t "secureops-frontend:$IMAGE_TAG" frontend
+      - name: Scan both runtime images including the gateway runtime
+        run: bash scripts/security-scan.sh images
+      - name: Run built containers and authenticated smoke checks
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          python3 scripts/init-local.py
+          docker compose -p secureops-security-ci -f compose.yaml -f compose.ci.yaml up -d --no-build --wait --wait-timeout 180
+          python3 scripts/container-smoke.py
+      - name: Save image security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-security-reports
+          path: reports/trivy-*.json
+          if-no-files-found: warn
+      - name: Clean up disposable CI services
+        if: always()
+        run: |
+          if [ -f .env ]; then
+            docker compose -p secureops-security-ci -f compose.yaml -f compose.ci.yaml down --volumes --remove-orphans
+          fi

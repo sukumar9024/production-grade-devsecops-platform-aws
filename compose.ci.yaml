@@ -1,0 +1,10 @@
+# Use already-built release images against disposable local dependencies in CI.
+services:
+  migrate:
+    image: secureops-backend:${IMAGE_TAG:?Set the tested Git SHA}
+  backend:
+    image: secureops-backend:${IMAGE_TAG:?Set the tested Git SHA}
+  frontend:
+    image: secureops-frontend:${IMAGE_TAG:?Set the tested Git SHA}
+  nginx:
+    image: secureops-frontend:${IMAGE_TAG:?Set the tested Git SHA}

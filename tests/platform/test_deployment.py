@@ -64,6 +64,20 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(self.manager.load("current")["git_commit"], "a" * 40)
         self.assertIn("http://127.0.0.1:8080", checked)
 
+    def test_gateway_uses_scanned_release_image_and_restores_it_on_rollback(self):
+        images = []
+
+        def capture(command, **kwargs):
+            if "secureops-gateway" in command and "up" in command:
+                images.append(kwargs["env"]["GATEWAY_IMAGE"])
+
+        self.manager.runner = capture
+        self.manager.deploy(self.new)
+        self.manager.rollback()
+        self.assertEqual(images, [self.new["frontend_image"], self.old["frontend_image"]])
+        self.assertEqual((self.root / ".runtime/gateway.env").read_text(),
+                         f"GATEWAY_IMAGE={self.old['frontend_image']}\n")
+
 
 if __name__ == "__main__":
     unittest.main()

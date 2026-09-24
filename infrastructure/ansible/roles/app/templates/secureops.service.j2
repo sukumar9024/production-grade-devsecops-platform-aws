@@ -3,13 +3,15 @@ Description=SecureOps production gateway
 Requires=docker.service
 After=docker.service network-online.target
 ConditionPathExists={{ secureops_root }}/.env.runtime
+ConditionPathExists={{ secureops_root }}/.runtime/gateway.env
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={{ secureops_root }}
-ExecStart=/usr/bin/docker compose -f compose.gateway.yaml up -d
-ExecStop=/usr/bin/docker compose -f compose.gateway.yaml stop
+EnvironmentFile={{ secureops_root }}/.runtime/gateway.env
+ExecStart=/usr/bin/docker compose -p secureops-gateway -f compose.gateway.yaml up -d
+ExecStop=/usr/bin/docker compose -p secureops-gateway -f compose.gateway.yaml stop
 TimeoutStartSec=180
 
 [Install]

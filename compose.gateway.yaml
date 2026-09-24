@@ -1,7 +1,8 @@
 # Linux EC2 only: gateway connects to loopback blue/green application slots.
 services:
   gateway:
-    image: nginxinc/nginx-unprivileged:1.28-alpine
+    # The release's scanned frontend image also provides the patched Nginx gateway.
+    image: ${GATEWAY_IMAGE:?A scanned immutable frontend image digest is required}
     container_name: secureops-gateway
     network_mode: host
     restart: unless-stopped

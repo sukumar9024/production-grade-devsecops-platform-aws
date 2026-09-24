@@ -1,0 +1,5 @@
+# One retired local-only JWT example, scoped to its original commit/path/rule/line.
+# Owner confirmed no external deployment. Local config and running app use other
+# keys, and Settings rejects the retired key by SHA256. See security-review.md.
+# A new occurrence has a different fingerprint and must still fail the gate.
+a9bb74f641db1473d19f98c65adeb4f4e3384a6a:backend/.env.example:generic-api-key:9

@@ -90,7 +90,9 @@ services:
 
   nginx:
     <<: *app
-    image: nginxinc/nginx-unprivileged:1.28-alpine
+    # Reuse the patched, scanned frontend runtime; mounted config makes it a gateway.
+    image: secureops-frontend:local
+    pull_policy: never
     ports: ["127.0.0.1:${APP_PORT:-8080}:8080"]
     read_only: true
     tmpfs: [/tmp]

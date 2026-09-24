@@ -72,10 +72,12 @@ class Deployer:
                      "-f", str(self.root / "compose.prod.yaml"), *arguments], cwd=self.root, env=env)
 
     def switch(self, release):
+        gateway_env = dict(os.environ, GATEWAY_IMAGE=release["frontend_image"])
+        atomic_write(self.state / "gateway.env", f"GATEWAY_IMAGE={release['frontend_image']}\n")
         atomic_write(self.root / "docker/gateway/upstream.conf",
             f"upstream active_slot {{ server 127.0.0.1:{release['app_port']}; keepalive 16; }}\n", 0o644)
         self.runner(["docker", "compose", "-p", "secureops-gateway", "-f",
-            str(self.root / "compose.gateway.yaml"), "up", "-d"], cwd=self.root)
+            str(self.root / "compose.gateway.yaml"), "up", "-d"], cwd=self.root, env=gateway_env)
         self.runner(["docker", "exec", "secureops-gateway", "nginx", "-t"])
         self.runner(["docker", "exec", "secureops-gateway", "nginx", "-s", "reload"])
         # Prometheus file discovery follows the active slot, not the standby.

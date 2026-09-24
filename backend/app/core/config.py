@@ -1,9 +1,16 @@
+import hashlib
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Retired example credential: keep only its hash, never the exposed value.
+# Reject reuse even in local environments. See docs/security-review.md.
+RETIRED_JWT_SECRET_HASHES = frozenset(
+    {"a2d24662a5f9d0eadedc30a715f168b8baa81163bc83b426c4cab64d5e13f078"}
+)
 
 
 class Settings(BaseSettings):
@@ -29,6 +36,8 @@ class Settings(BaseSettings):
     @field_validator("jwt_secret")
     @classmethod
     def reject_placeholder_secret(cls, value: str) -> str:
+        if hashlib.sha256(value.encode()).hexdigest() in RETIRED_JWT_SECRET_HASHES:
+            raise ValueError("JWT_SECRET was exposed and must be replaced")
         if any(
             marker in value.lower()
             for marker in ("generate-me", "change-me", "changeme")

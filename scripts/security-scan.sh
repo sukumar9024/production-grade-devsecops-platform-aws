@@ -29,10 +29,14 @@ case "$mode" in
     docker run --rm -v "$PWD:/src" -w /src "$GITLEAKS_IMAGE" git --redact --report-format json --report-path reports/gitleaks.json .
     ;;
   images)
+    status=0
     for component in backend frontend; do
       image="${IMAGE_PREFIX:-secureops}-$component:${IMAGE_TAG:?Set immutable Git SHA tag}"
-      docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/reports:/reports" "$TRIVY_IMAGE" image --severity HIGH,CRITICAL --exit-code 1 --format json --output "/reports/trivy-$component.json" "$image"
+      if ! docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/reports:/reports" "$TRIVY_IMAGE" image --scanners vuln,secret --severity HIGH,CRITICAL --exit-code 1 --format json --output "/reports/trivy-$component.json" "$image"; then
+        status=1
+      fi
     done
+    exit "$status"
     ;;
   *) echo "Unknown scan mode" >&2; exit 2 ;;
 esac
