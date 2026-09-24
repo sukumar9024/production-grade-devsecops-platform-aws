@@ -1,0 +1,35 @@
+---
+- name: Install Docker from signed Amazon Linux repositories
+  ansible.builtin.dnf:
+    name: docker
+    state: present
+- name: Create Docker configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/docker
+    - /usr/local/lib/docker/cli-plugins
+- name: Install pinned Compose plugin with published checksum
+  ansible.builtin.get_url:
+    url: https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    checksum: sha256:https://github.com/docker/compose/releases/download/v2.39.4/docker-compose-linux-x86_64.sha256
+    owner: root
+    group: root
+    mode: '0755'
+- name: Configure bounded JSON logs and safe daemon defaults
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {"log-driver":"json-file","log-opts":{"max-size":"10m","max-file":"3"},"live-restore":true,"no-new-privileges":true,"userland-proxy":false}
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart docker
+- name: Enable Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

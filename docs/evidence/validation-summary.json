@@ -1,0 +1,79 @@
+{
+  "semgrep": {
+    "findings": 0,
+    "errors": 1,
+    "followup": "Partial parse warning fixed by parenthesized exceptions; strict rescan remains blocked by Docker storage."
+  },
+  "pip-audit": {
+    "vulnerabilities": 0
+  },
+  "npm-audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "trivy-filesystem": {
+    "vulnerabilities": 0,
+    "misconfigurations": 0
+  },
+  "trivy-iac": {
+    "vulnerabilities": 0,
+    "misconfigurations": 0
+  },
+  "trivy-backend": {
+    "vulnerabilities": 63,
+    "misconfigurations": 0
+  },
+  "gitleaks": {
+    "historical_findings": 1,
+    "files": [
+      "backend/.env.example"
+    ]
+  },
+  "local-restore": {
+    "scope": "local PostgreSQL only; not an RDS restore",
+    "backup_time": "2026-09-24T06:04:20.051497+00:00",
+    "target": "secureops_restore_00ca23712611",
+    "validation": "passed",
+    "restore_start": "2026-09-24T06:04:21.000366+00:00",
+    "restore_completion": "2026-09-24T06:04:22.033104+00:00",
+    "tables_verified": [
+      "alembic_version",
+      "audit_logs",
+      "deployments",
+      "incidents",
+      "projects",
+      "refresh_tokens",
+      "roles",
+      "services",
+      "users"
+    ],
+    "backup_sha256": "d137dc0874692f98d36465cd2f0e5818ce62300f7aa1ab377977e88c6ad523ae"
+  },
+  "note": "Recorded 2026-09-24. Docker became read-only during observability image extraction. User requested no restart. Frontend image scan and observability runtime validation remain blocked.",
+  "tests": {
+    "earlier_backend_run": {
+      "passed": 62
+    },
+    "latest_backend_attempt": {
+      "passed": 10,
+      "failed": 1,
+      "errors": 51,
+      "cause": "PostgreSQL storage read-only after Docker disk failure; FATAL could not open base/16384/2601"
+    },
+    "frontend": {
+      "passed": 9
+    },
+    "platform": {
+      "passed": 8
+    },
+    "backend_lint_and_format": "passed after final source edits"
+  },
+  "gitleaks-staged": {
+    "findings": 0,
+    "scope": "Exact staged source snapshot; history finding remains separate"
+  }
+}

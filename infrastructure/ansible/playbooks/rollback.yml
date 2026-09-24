@@ -1,0 +1,20 @@
+---
+- name: Restore the recorded previous release serially
+  hosts: role_app
+  become: true
+  serial: 1
+  any_errors_fatal: true
+  gather_facts: false
+  vars:
+    secureops_root: /opt/secureops
+  tasks:
+    - name: Roll back and verify previous release
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3.11
+          - "{{ secureops_root }}/scripts/deploy-release.py"
+          - --root
+          - "{{ secureops_root }}"
+          - --rollback
+      no_log: true
+      changed_when: true

@@ -1,0 +1,6 @@
+bucket = "REPLACE_BOOTSTRAP_STATE_BUCKET"
+key = "secureops/prod/terraform.tfstate"
+region = "ap-south-1"
+encrypt = true
+use_lockfile = true
+kms_key_id = "REPLACE_BOOTSTRAP_KMS_KEY_ARN"

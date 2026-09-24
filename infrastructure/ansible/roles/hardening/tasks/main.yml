@@ -1,0 +1,35 @@
+---
+- name: Install security updates
+  ansible.builtin.dnf:
+    name: '*'
+    security: true
+    state: latest
+- name: Disable SSH because access is exclusively via SSM
+  ansible.builtin.service:
+    name: sshd
+    state: stopped
+    enabled: false
+- name: Protect kernel networking settings
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-secureops.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.default.accept_redirects = 0
+      net.ipv4.conf.all.send_redirects = 0
+      net.ipv4.conf.default.send_redirects = 0
+      net.ipv4.conf.all.accept_source_route = 0
+      net.ipv4.conf.default.accept_source_route = 0
+      kernel.kptr_restrict = 2
+      kernel.dmesg_restrict = 1
+  notify: Reload sysctl
+- name: Restrict sudo to explicit operator identities
+  ansible.builtin.file:
+    path: /etc/sudoers.d
+    owner: root
+    group: root
+    mode: '0750'
+# Security groups are the authoritative network firewall. Do not install firewalld
+# over Docker-managed chains: ALB alone can reach 8080, and SSH has no ingress.

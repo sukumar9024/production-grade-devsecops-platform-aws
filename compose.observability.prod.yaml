@@ -1,0 +1,80 @@
+# Standalone Linux EC2 observability. UI endpoints are localhost/SSM only.
+services:
+  blackbox:
+    image: prom/blackbox-exporter:v0.27.0
+    network_mode: host
+    restart: unless-stopped
+    volumes: [./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro]
+    command: [--config.file=/etc/blackbox_exporter/config.yml, --web.listen-address=127.0.0.1:9115]
+    mem_limit: 64m
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    network_mode: host
+    restart: unless-stopped
+    command: [--config.file=/etc/prometheus/prometheus.yml, --web.listen-address=127.0.0.1:9090, --storage.tsdb.retention.time=15d]
+    volumes:
+      - ./monitoring/prometheus-prod.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./monitoring/targets:/etc/prometheus/targets:ro
+      - prometheus_data:/prometheus
+    mem_limit: 512m
+  grafana:
+    image: grafana/grafana:12.1.1
+    network_mode: host
+    restart: unless-stopped
+    env_file: [.env.observability]
+    environment:
+      GF_SERVER_HTTP_ADDR: 127.0.0.1
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning-prod:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    mem_limit: 384m
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    network_mode: host
+    restart: unless-stopped
+    command: [--config.file=/etc/alertmanager/alertmanager.yml, --web.listen-address=127.0.0.1:9093, --cluster.listen-address=]
+    volumes:
+      - ./monitoring/alertmanager.runtime.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    mem_limit: 128m
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    command: [--path.rootfs=/host, --web.listen-address=127.0.0.1:9100, --collector.textfile.directory=/textfile]
+    volumes: [/:/host:ro,rslave, ./monitoring/textfile:/textfile:ro]
+    mem_limit: 128m
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    network_mode: host
+    restart: unless-stopped
+    command: [--listen_ip=127.0.0.1, --port=8085, --docker_only=true]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    mem_limit: 256m
+  fluent-bit:
+    image: fluent/fluent-bit:4.0.8
+    network_mode: host
+    restart: unless-stopped
+    env_file: [.env.aws]
+    volumes:
+      - ./logging/fluent-bit-prod.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./logging/parsers.conf:/fluent-bit/etc/parsers-custom.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log/host:ro
+      - fluent_bit_state:/fluent-bit/state
+    mem_limit: 128m
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+  fluent_bit_state:

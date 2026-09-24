@@ -1,0 +1,7 @@
+region            = "ap-south-1"
+domain_name       = "********"
+zone_id           = "********"
+alarm_email       = "********"
+enable_jenkins    = false
+enable_opensearch = true
+# Redis AUTH is supplied through TF_VAR_redis_auth_token, not this file.

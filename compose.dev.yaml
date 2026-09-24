@@ -1,0 +1,8 @@
+# Optional development overrides; never use this file on AWS.
+services:
+  backend:
+    command: [uvicorn, app.main:app, --host, 0.0.0.0, --port, "8000", --reload]
+    volumes: [./backend/app:/app/app:ro]
+    ports: ["127.0.0.1:8000:8000"]
+  postgres:
+    ports: ["127.0.0.1:55433:5432"]

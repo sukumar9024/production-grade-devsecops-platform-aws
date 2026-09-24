@@ -1,0 +1,56 @@
+---
+- name: Require Amazon Linux 2023 hosts
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'Amazon'
+      - ansible_facts.distribution_major_version == '2023'
+- name: Install operating dependencies
+  ansible.builtin.dnf:
+    name:
+      - python3
+      - python3-pip
+      - python3.11
+      - awscli-2
+      - jq
+      - curl-minimal
+      - tar
+      - unzip
+      - chrony
+      - logrotate
+      - rsyslog
+    state: present
+- name: Keep time synchronized
+  ansible.builtin.service:
+    name: chronyd
+    state: started
+    enabled: true
+- name: Set UTC timezone
+  ansible.builtin.command: timedatectl set-timezone UTC
+  changed_when: false
+- name: Create non-login application owner
+  ansible.builtin.user:
+    name: secureops
+    system: true
+    create_home: false
+    shell: /sbin/nologin
+- name: Create deployment directories
+  ansible.builtin.file:
+    path: "{{ secureops_root }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  loop:
+    - ''
+    - scripts
+    - docker
+    - releases
+    - monitoring
+    - logging
+- name: Configure system limits
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/90-secureops.conf
+    content: "* soft nofile 65536\n* hard nofile 65536\n"
+    owner: root
+    group: root
+    mode: '0644'
